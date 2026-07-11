@@ -1,0 +1,183 @@
+package com.elektriker.app.ui.screens.task
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.elektriker.app.data.local.entity.WorkTaskEntity
+import com.elektriker.app.data.local.entity.WorkStepEntity
+import com.elektriker.app.data.repository.*
+import com.elektriker.app.service.VoiceRecorder
+import com.elektriker.app.util.Constants
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import java.util.UUID
+import javax.inject.Inject
+
+data class NewTaskUiState(
+    val title: String = "",
+    val category: String = Constants.Categories.UV,
+    val description: String = "",
+    val location: String = "",
+    val customerName: String = "",
+    val steps: List<StepInput> = emptyList(),
+    val isSaving: Boolean = false,
+    val savedTaskId: String? = null,
+    val voiceNotePath: String? = null,
+    val isRecording: Boolean = false,
+    val isPlaying: Boolean = false,
+    val photoPaths: List<String> = emptyList(),
+    val showCategoryPicker: Boolean = false
+)
+
+data class StepInput(
+    val id: String = UUID.randomUUID().toString(),
+    val description: String = "",
+    val warning: String? = null
+)
+
+@HiltViewModel
+class TaskViewModel @Inject constructor(
+    private val taskRepository: TaskRepository,
+    private val stepRepository: StepRepository,
+    private val errorLogRepository: ErrorLogRepository,
+    private val templateRepository: TemplateRepository,
+    private val voiceRecorder: VoiceRecorder
+) : ViewModel() {
+
+    private val _state = MutableStateFlow(NewTaskUiState())
+    val state: StateFlow<NewTaskUiState> = _state.asStateFlow()
+
+    private val _task = MutableStateFlow<WorkTaskEntity?>(null)
+    val task: StateFlow<WorkTaskEntity?> = _task.asStateFlow()
+
+    private val _steps = MutableStateFlow<List<WorkStepEntity>>(emptyList())
+    val steps: StateFlow<List<WorkStepEntity>> = _steps.asStateFlow()
+
+    private val _warnings = MutableStateFlow<List<com.elektriker.app.data.local.entity.ErrorLogEntity>>(emptyList())
+    val warnings: StateFlow<List<com.elektriker.app.data.local.entity.ErrorLogEntity>> = _warnings.asStateFlow()
+
+    fun updateTitle(value: String) { _state.update { it.copy(title = value) } }
+    fun updateCategory(value: String) { _state.update { it.copy(category = value) } }
+    fun updateDescription(value: String) { _state.update { it.copy(description = value) } }
+    fun updateLocation(value: String) { _state.update { it.copy(location = value) } }
+    fun updateCustomer(value: String) { _state.update { it.copy(customerName = value) } }
+    fun toggleCategoryPicker() { _state.update { it.copy(showCategoryPicker = !it.showCategoryPicker) } }
+
+    fun addStep() {
+        _state.update {
+            it.copy(steps = it.steps + StepInput())
+        }
+    }
+
+    fun updateStep(index: Int, description: String, warning: String?) {
+        _state.update {
+            val updated = it.steps.toMutableList()
+            if (index < updated.size) {
+                updated[index] = updated[index].copy(description = description, warning = warning)
+            }
+            it.copy(steps = updated)
+        }
+    }
+
+    fun removeStep(index: Int) {
+        _state.update {
+            val updated = it.steps.toMutableList()
+            if (index < updated.size) updated.removeAt(index)
+            it.copy(steps = updated)
+        }
+    }
+
+    fun toggleRecording() {
+        val current = _state.value
+        if (current.isRecording) {
+            val file = voiceRecorder.stopRecording()
+            _state.update {
+                it.copy(isRecording = false, voiceNotePath = file?.absolutePath ?: it.voiceNotePath)
+            }
+        } else {
+            voiceRecorder.startRecording()
+            _state.update { it.copy(isRecording = true, isPlaying = false) }
+        }
+    }
+
+    fun togglePlayback() {
+        val path = _state.value.voiceNotePath ?: return
+        if (_state.value.isPlaying) {
+            voiceRecorder.stopPlayback()
+            _state.update { it.copy(isPlaying = false) }
+        } else {
+            voiceRecorder.startPlayback(path) {
+                _state.update { it.copy(isPlaying = false) }
+            }
+            _state.update { it.copy(isPlaying = true) }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        voiceRecorder.cleanup()
+    }
+
+    fun addPhotoPath(path: String) {
+        _state.update { it.copy(photoPaths = it.photoPaths + path) }
+    }
+
+    fun saveTask() {
+        viewModelScope.launch {
+            val s = _state.value
+            if (s.title.isBlank()) return@launch
+
+            _state.update { it.copy(isSaving = true) }
+
+            val task = taskRepository.createTask(
+                title = s.title,
+                category = s.category,
+                description = s.description,
+                location = s.location,
+                customerName = s.customerName,
+                projectId = null,
+                durationSeconds = 0
+            )
+
+            s.steps.forEachIndexed { index, stepInput ->
+                if (stepInput.description.isNotBlank()) {
+                    stepRepository.addStep(
+                        taskId = task.id,
+                        description = stepInput.description,
+                        order = index,
+                        warning = stepInput.warning
+                    )
+                }
+            }
+
+            _state.update {
+                it.copy(isSaving = false, savedTaskId = task.id)
+            }
+        }
+    }
+
+    fun loadTask(taskId: String) {
+        viewModelScope.launch {
+            val t = taskRepository.getTaskById(taskId)
+            _task.value = t
+            if (t != null) {
+                viewModelScope.launch {
+                    stepRepository.getStepsForTask(taskId).collect { stepList ->
+                        _steps.value = stepList
+                    }
+                }
+                viewModelScope.launch {
+                    val warningList = errorLogRepository.getRelevantWarnings(t.category)
+                    _warnings.value = warningList
+                }
+            }
+        }
+    }
+
+    fun loadWarningsForCategory(category: String) {
+        viewModelScope.launch {
+            val warnings = errorLogRepository.getRelevantWarnings(category)
+            _warnings.value = warnings
+        }
+    }
+}

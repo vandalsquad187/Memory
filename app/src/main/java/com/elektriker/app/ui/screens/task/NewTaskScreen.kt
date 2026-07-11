@@ -1,0 +1,376 @@
+package com.elektriker.app.ui.screens.task
+
+import android.Manifest
+import android.content.pm.PackageManager
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
+import com.elektriker.app.ui.components.WarningCard
+import com.elektriker.app.ui.navigation.Screen
+import com.elektriker.app.ui.theme.ErrorSeverityHigh
+import com.elektriker.app.ui.theme.ErrorSeverityMedium
+import com.elektriker.app.util.Constants
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NewTaskScreen(
+    navController: NavController,
+    viewModel: TaskViewModel = hiltViewModel()
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    LaunchedEffect(state.savedTaskId) {
+        state.savedTaskId?.let { taskId ->
+            navController.navigate(Screen.Assistant.createRoute(taskId)) {
+                popUpTo(Screen.Home.route)
+            }
+        }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            Toast.makeText(context, "Foto aufgenommen", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) cameraLauncher.launch(null)
+    }
+
+    val voicePermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) viewModel.toggleRecording()
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Neue Arbeit") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        @Suppress("DEPRECATION")
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Zurück")
+                    }
+                }
+            )
+        },
+        bottomBar = {
+            Surface(
+                tonalElevation = 3.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Button(
+                    onClick = { viewModel.saveTask() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .height(56.dp),
+                    enabled = state.title.isNotBlank() && !state.isSaving
+                ) {
+                    if (state.isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Icon(Icons.Default.PlayArrow, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Arbeit starten", style = MaterialTheme.typography.labelLarge)
+                    }
+                }
+            }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            OutlinedTextField(
+                value = state.title,
+                onValueChange = { viewModel.updateTitle(it) },
+                label = { Text("Titel *") },
+                placeholder = { Text("z.B. Unterverteilung verdrahtet") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = state.customerName,
+                    onValueChange = { viewModel.updateCustomer(it) },
+                    label = { Text("Kunde") },
+                    placeholder = { Text("Name") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = state.location,
+                    onValueChange = { viewModel.updateLocation(it) },
+                    label = { Text("Ort") },
+                    placeholder = { Text("Baustelle") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+            }
+
+            ExposedDropdownMenuBox(
+                expanded = state.showCategoryPicker,
+                onExpandedChange = { viewModel.toggleCategoryPicker() }
+            ) {
+                OutlinedTextField(
+                    value = state.category,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Kategorie") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showCategoryPicker) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = state.showCategoryPicker,
+                    onDismissRequest = { viewModel.toggleCategoryPicker() }
+                ) {
+                    Constants.Categories.all.forEach { cat ->
+                        DropdownMenuItem(
+                            text = { Text(cat) },
+                            onClick = {
+                                viewModel.updateCategory(cat)
+                                viewModel.toggleCategoryPicker()
+                                viewModel.loadWarningsForCategory(cat)
+                            }
+                        )
+                    }
+                }
+            }
+
+            OutlinedTextField(
+                value = state.description,
+                onValueChange = { viewModel.updateDescription(it) },
+                label = { Text("Beschreibung") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    onClick = {
+                        val permission = Manifest.permission.CAMERA
+                        if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
+                            cameraLauncher.launch(null)
+                        } else {
+                            cameraPermissionLauncher.launch(permission)
+                        }
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp)
+                ) {
+                    Icon(Icons.Default.PhotoCamera, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Foto")
+                }
+
+                val voiceColor = when {
+                    state.isRecording -> MaterialTheme.colorScheme.error
+                    state.voiceNotePath != null -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.onSurface
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        if (!state.isRecording) {
+                            val permission = Manifest.permission.RECORD_AUDIO
+                            if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
+                                viewModel.toggleRecording()
+                            } else {
+                                voicePermissionLauncher.launch(permission)
+                            }
+                        } else {
+                            viewModel.toggleRecording()
+                        }
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = voiceColor
+                    )
+                ) {
+                    if (state.isRecording) {
+                        Icon(Icons.Default.FiberManualRecord, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Stop")
+                    } else if (state.voiceNotePath != null) {
+                        Icon(Icons.Default.Mic, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Aufnahme ✅")
+                    } else {
+                        Icon(Icons.Default.Mic, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Sprache")
+                    }
+                }
+            }
+
+            if (state.voiceNotePath != null && !state.isRecording) {
+                TextButton(onClick = { viewModel.togglePlayback() }) {
+                    Icon(
+                        imageVector = if (state.isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(if (state.isPlaying) "Wiedergabe stoppen" else "Aufnahme abspielen")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Arbeitsschritte",
+                    style = MaterialTheme.typography.titleLarge
+                )
+                FilledTonalButton(onClick = { viewModel.addStep() }) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Schritt")
+                }
+            }
+
+            state.steps.forEachIndexed { index, step ->
+                StepInputCard(
+                    step = step,
+                    stepNumber = index + 1,
+                    onUpdate = { desc, warn ->
+                        viewModel.updateStep(index, desc, warn)
+                    },
+                    onRemove = { viewModel.removeStep(index) }
+                )
+            }
+
+            if (state.steps.isEmpty()) {
+                Text(
+                    text = "Optional: Füge Arbeitsschritte hinzu",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun StepInputCard(
+    step: com.elektriker.app.ui.screens.task.StepInput,
+    stepNumber: Int,
+    onUpdate: (String, String?) -> Unit,
+    onRemove: () -> Unit
+) {
+    var description by remember(step.id) { mutableStateOf(step.description) }
+    var warning by remember(step.id) { mutableStateOf(step.warning ?: "") }
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "$stepNumber.",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = {
+                        description = it
+                        onUpdate(it, warning.ifBlank { null })
+                    },
+                    placeholder = { Text("Schritt beschreiben") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+                IconButton(onClick = onRemove) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Entfernen",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+            TextButton(onClick = { expanded = !expanded }) {
+                Icon(
+                    Icons.Default.Warning,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(if (expanded) "Warnung ausblenden" else "Warnung hinzufügen")
+            }
+            if (expanded) {
+                OutlinedTextField(
+                    value = warning,
+                    onValueChange = {
+                        warning = it
+                        onUpdate(description, it.ifBlank { null })
+                    },
+                    label = { Text("Sicherheitswarnung") },
+                    placeholder = { Text("z.B. Spannung prüfen!") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = ErrorSeverityMedium,
+                        cursorColor = ErrorSeverityMedium
+                    )
+                )
+            }
+        }
+    }
+}
