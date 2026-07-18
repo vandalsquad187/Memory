@@ -82,4 +82,15 @@ class KnowledgeViewModel @Inject constructor(
             knowledgeRepository.toggleFavorite(id, isFavorite)
         }
     }
+
+    fun createEntry(title: String, content: String, tags: String, category: String) {
+        viewModelScope.launch {
+            knowledgeRepository.createEntry(
+                title = title,
+                content = content,
+                tags = tags,
+                category = category
+            )
+        }
+    }
 }

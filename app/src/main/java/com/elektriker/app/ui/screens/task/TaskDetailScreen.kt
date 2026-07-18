@@ -3,10 +3,13 @@ package com.elektriker.app.ui.screens.task
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -18,7 +21,9 @@ import com.elektriker.app.ui.components.BottomNavBar
 import com.elektriker.app.ui.components.StepChecklistItem
 import com.elektriker.app.ui.components.WarningCard
 import com.elektriker.app.ui.navigation.Screen
+import com.elektriker.app.ui.theme.ErrorSeverityMedium
 import com.elektriker.app.ui.theme.GreenSuccess
+import com.elektriker.app.util.Constants
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,6 +35,8 @@ fun TaskDetailScreen(
     val task by viewModel.task.collectAsStateWithLifecycle()
     val steps by viewModel.steps.collectAsStateWithLifecycle()
     val warnings by viewModel.warnings.collectAsStateWithLifecycle()
+    val isEditing by viewModel.isEditing.collectAsStateWithLifecycle()
+    val editState by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(taskId) {
         viewModel.loadTask(taskId)
@@ -38,129 +45,392 @@ fun TaskDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(task?.title ?: "Laden...") },
+                title = {
+                    Text(if (isEditing) "Bearbeiten" else (task?.title ?: "Laden..."))
+                },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        @Suppress("DEPRECATION")
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Zurück")
+                    IconButton(onClick = {
+                        if (isEditing) viewModel.cancelEdit()
+                        else navController.popBackStack()
+                    }) {
+                        Icon(
+                            if (isEditing) Icons.Default.Close else Icons.Default.ArrowBack,
+                            contentDescription = if (isEditing) "Abbrechen" else "Zurück"
+                        )
+                    }
+                },
+                actions = {
+                    if (isEditing) {
+                        TextButton(onClick = { viewModel.confirmEdit() }) {
+                            Text("Speichern")
+                        }
+                    } else {
+                        IconButton(onClick = { viewModel.startEdit() }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Bearbeiten")
+                        }
                     }
                 }
             )
         },
         bottomBar = {
-            BottomNavBar(
-                currentRoute = "home",
-                onNavigate = { route ->
-                    when (route) {
-                        "home" -> navController.navigate(Screen.Home.route) { popUpTo(Screen.Home.route) { inclusive = true } }
-                        "history" -> navController.navigate(Screen.History.route)
-                        "new_task" -> navController.navigate(Screen.NewTask.route)
-                        "knowledge" -> navController.navigate(Screen.Knowledge.route)
-                        "profile" -> navController.navigate(Screen.Profile.route)
+            if (isEditing) {
+                Surface(
+                    tonalElevation = 3.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Button(
+                        onClick = { viewModel.confirmEdit() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .height(56.dp),
+                        enabled = editState.title.isNotBlank()
+                    ) {
+                        Icon(Icons.Default.Save, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Speichern", style = MaterialTheme.typography.labelLarge)
                     }
                 }
-            )
-        }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            task?.let { t ->
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = t.category,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                if (t.isCompleted) {
-                                    Icon(
-                                        Icons.Default.CheckCircle,
-                                        contentDescription = "Erledigt",
-                                        tint = GreenSuccess
-                                    )
-                                }
-                            }
-                            if (t.location.isNotBlank()) {
-                                Text(
-                                    text = t.location,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                            if (t.description.isNotBlank()) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = t.description,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
+            } else {
+                BottomNavBar(
+                    currentRoute = "home",
+                    onNavigate = { route ->
+                        when (route) {
+                            "home" -> navController.navigate(Screen.Home.route) { popUpTo(Screen.Home.route) { inclusive = true } }
+                            "history" -> navController.navigate(Screen.History.route)
+                            "new_task" -> navController.navigate(Screen.NewTask.route)
+                            "knowledge" -> navController.navigate(Screen.Knowledge.route)
+                            "profile" -> navController.navigate(Screen.Profile.route)
                         }
                     }
-                }
+                )
+            }
+        }
+    ) { padding ->
+        if (isEditing) {
+            EditTaskContent(
+                editState = editState,
+                viewModel = viewModel,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            )
+        } else {
+            ReadOnlyTaskContent(
+                task = task,
+                steps = steps,
+                warnings = warnings,
+                taskId = taskId,
+                onToggleStep = { stepId, done -> viewModel.toggleStepDone(stepId, done) },
+                onNavigateAssistant = {
+                    navController.navigate(Screen.Assistant.createRoute(taskId))
+                },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            )
+        }
+    }
+}
 
-                if (warnings.isNotEmpty()) {
-                    item {
-                        Text(
-                            text = "Erfahrungs-Warnungen",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                    items(warnings) { warning ->
-                        WarningCard(
-                            title = "Fehler bei ${warning.taskCategory}",
-                            description = warning.description,
-                            severity = warning.severity
-                        )
-                    }
-                }
-
-                if (steps.isNotEmpty()) {
-                    item {
+@Composable
+private fun ReadOnlyTaskContent(
+    task: WorkTaskEntity?,
+    steps: List<WorkStepEntity>,
+    warnings: List<com.elektriker.app.data.local.entity.ErrorLogEntity>,
+    taskId: String,
+    onToggleStep: (String, Boolean) -> Unit,
+    onNavigateAssistant: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        task?.let { t ->
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Schritte",
-                                style = MaterialTheme.typography.titleLarge
+                                text = t.category,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary
                             )
-                            FilledTonalButton(
-                                onClick = {
-                                    navController.navigate(Screen.Assistant.createRoute(taskId))
-                                }
-                            ) {
-                                Icon(Icons.Default.PlayArrow, contentDescription = null)
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Assistent")
+                            if (t.isCompleted) {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = "Erledigt",
+                                    tint = GreenSuccess
+                                )
                             }
                         }
-                    }
-
-                    items(steps) { step ->
-                        StepChecklistItem(
-                            stepNumber = step.stepOrder + 1,
-                            description = step.description,
-                            isDone = step.isDone,
-                            warning = step.warning,
-                            onToggle = { }
-                        )
+                        if (t.location.isNotBlank()) {
+                            Text(
+                                text = t.location,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        if (t.description.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = t.description,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
                     }
                 }
+            }
+
+            if (warnings.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Erfahrungs-Warnungen",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                items(warnings) { warning ->
+                    WarningCard(
+                        title = "Fehler bei ${warning.taskCategory}",
+                        description = warning.description,
+                        severity = warning.severity
+                    )
+                }
+            }
+
+            if (steps.isNotEmpty()) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Schritte",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        FilledTonalButton(onClick = onNavigateAssistant) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Assistent")
+                        }
+                    }
+                }
+
+                items(steps) { step ->
+                    StepChecklistItem(
+                        stepNumber = step.stepOrder + 1,
+                        description = step.description,
+                        isDone = step.isDone,
+                        warning = step.warning,
+                        onToggle = { onToggleStep(step.id, !step.isDone) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EditTaskContent(
+    editState: NewTaskUiState,
+    viewModel: TaskViewModel,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        OutlinedTextField(
+            value = editState.title,
+            onValueChange = { viewModel.updateTitle(it) },
+            label = { Text("Titel *") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedTextField(
+                value = editState.customerName,
+                onValueChange = { viewModel.updateCustomer(it) },
+                label = { Text("Kunde") },
+                modifier = Modifier.weight(1f),
+                singleLine = true
+            )
+            OutlinedTextField(
+                value = editState.location,
+                onValueChange = { viewModel.updateLocation(it) },
+                label = { Text("Ort") },
+                modifier = Modifier.weight(1f),
+                singleLine = true
+            )
+        }
+
+        ExposedDropdownMenuBox(
+            expanded = editState.showCategoryPicker,
+            onExpandedChange = { viewModel.toggleCategoryPicker() }
+        ) {
+            OutlinedTextField(
+                value = editState.category,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Kategorie") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = editState.showCategoryPicker) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor()
+            )
+            ExposedDropdownMenu(
+                expanded = editState.showCategoryPicker,
+                onDismissRequest = { viewModel.toggleCategoryPicker() }
+            ) {
+                Constants.Categories.all.forEach { cat ->
+                    DropdownMenuItem(
+                        text = { Text(cat) },
+                        onClick = {
+                            viewModel.updateCategory(cat)
+                            viewModel.toggleCategoryPicker()
+                        }
+                    )
+                }
+            }
+        }
+
+        OutlinedTextField(
+            value = editState.description,
+            onValueChange = { viewModel.updateDescription(it) },
+            label = { Text("Beschreibung") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Arbeitsschritte",
+                style = MaterialTheme.typography.titleLarge
+            )
+            FilledTonalButton(onClick = { viewModel.addStep() }) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Schritt")
+            }
+        }
+
+        editState.steps.forEachIndexed { index, step ->
+            EditStepCard(
+                step = step,
+                stepNumber = index + 1,
+                onUpdate = { desc, warn ->
+                    viewModel.updateStep(index, desc, warn)
+                },
+                onRemove = { viewModel.removeStep(index) }
+            )
+        }
+
+        if (editState.steps.isEmpty()) {
+            Text(
+                text = "Keine Arbeitsschritte vorhanden",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun EditStepCard(
+    step: StepInput,
+    stepNumber: Int,
+    onUpdate: (String, String?) -> Unit,
+    onRemove: () -> Unit
+) {
+    var description by remember(step.id) { mutableStateOf(step.description) }
+    var warning by remember(step.id) { mutableStateOf(step.warning ?: "") }
+    var expanded by remember { mutableStateOf(step.warning != null) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "$stepNumber.",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = {
+                        description = it
+                        onUpdate(it, warning.ifBlank { null })
+                    },
+                    placeholder = { Text("Schritt beschreiben") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+                IconButton(onClick = onRemove) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Entfernen",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+            TextButton(onClick = { expanded = !expanded }) {
+                Icon(
+                    Icons.Default.Warning,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(if (expanded) "Warnung ausblenden" else "Warnung hinzufügen")
+            }
+            if (expanded) {
+                OutlinedTextField(
+                    value = warning,
+                    onValueChange = {
+                        warning = it
+                        onUpdate(description, it.ifBlank { null })
+                    },
+                    label = { Text("Sicherheitswarnung") },
+                    placeholder = { Text("z.B. Spannung prüfen!") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = ErrorSeverityMedium,
+                        cursorColor = ErrorSeverityMedium
+                    )
+                )
             }
         }
     }

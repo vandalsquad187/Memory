@@ -180,4 +180,64 @@ class TaskViewModel @Inject constructor(
             _warnings.value = warnings
         }
     }
+
+    private val _isEditing = MutableStateFlow(false)
+    val isEditing: StateFlow<Boolean> = _isEditing.asStateFlow()
+
+    fun startEdit() {
+        val t = _task.value ?: return
+        _state.update {
+            NewTaskUiState(
+                title = t.title,
+                category = t.category,
+                description = t.description,
+                location = t.location,
+                customerName = t.customerName,
+                steps = _steps.value.map { StepInput(id = it.id, description = it.description, warning = it.warning) }
+            )
+        }
+        _isEditing.value = true
+    }
+
+    fun cancelEdit() {
+        _isEditing.value = false
+        _state.update { NewTaskUiState() }
+    }
+
+    fun confirmEdit() {
+        viewModelScope.launch {
+            val s = _state.value
+            val t = _task.value ?: return@launch
+
+            val updated = t.copy(
+                title = s.title,
+                category = s.category,
+                description = s.description,
+                location = s.location,
+                customerName = s.customerName
+            )
+            taskRepository.updateTask(updated)
+
+            stepRepository.deleteStepsForTask(t.id)
+            s.steps.forEachIndexed { index, stepInput ->
+                if (stepInput.description.isNotBlank()) {
+                    stepRepository.addStep(
+                        taskId = t.id,
+                        description = stepInput.description,
+                        order = index,
+                        warning = stepInput.warning
+                    )
+                }
+            }
+
+            _isEditing.value = false
+            loadTask(t.id)
+        }
+    }
+
+    fun toggleStepDone(stepId: String, isDone: Boolean) {
+        viewModelScope.launch {
+            stepRepository.setStepDone(stepId, isDone)
+        }
+    }
 }
