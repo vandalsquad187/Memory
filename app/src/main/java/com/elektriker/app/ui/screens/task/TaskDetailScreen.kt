@@ -21,6 +21,8 @@ import com.elektriker.app.ui.components.BottomNavBar
 import com.elektriker.app.ui.components.StepChecklistItem
 import com.elektriker.app.ui.components.WarningCard
 import com.elektriker.app.ui.navigation.Screen
+import com.elektriker.app.ui.theme.ErrorSeverityHigh
+import com.elektriker.app.ui.theme.ErrorSeverityLow
 import com.elektriker.app.ui.theme.ErrorSeverityMedium
 import com.elektriker.app.ui.theme.GreenSuccess
 import com.elektriker.app.util.Constants
@@ -37,6 +39,7 @@ fun TaskDetailScreen(
     val warnings by viewModel.warnings.collectAsStateWithLifecycle()
     val isEditing by viewModel.isEditing.collectAsStateWithLifecycle()
     val editState by viewModel.state.collectAsStateWithLifecycle()
+    val editErrorState by viewModel.editErrorDialog.collectAsStateWithLifecycle()
 
     LaunchedEffect(taskId) {
         viewModel.loadTask(taskId)
@@ -130,6 +133,17 @@ fun TaskDetailScreen(
                     .padding(padding)
             )
         }
+    }
+
+    if (editErrorState.showDialog) {
+        EditErrorInputDialog(
+            description = editErrorState.description,
+            severity = editErrorState.severity,
+            onDescriptionChange = { viewModel.updateEditErrorDescription(it) },
+            onSeverityChange = { viewModel.updateEditErrorSeverity(it) },
+            onSave = { viewModel.saveEditError() },
+            onDismiss = { viewModel.hideEditErrorDialog() }
+        )
     }
 }
 
@@ -357,6 +371,17 @@ private fun EditTaskContent(
             )
         }
 
+        HorizontalDivider()
+
+        OutlinedButton(
+            onClick = { viewModel.showEditErrorDialog() },
+            modifier = Modifier.fillMaxWidth().height(48.dp)
+        ) {
+            Icon(Icons.Default.BugReport, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Fehler dokumentieren")
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
@@ -434,4 +459,76 @@ private fun EditStepCard(
             }
         }
     }
+}
+
+@Composable
+private fun EditErrorInputDialog(
+    description: String,
+    severity: Int,
+    onDescriptionChange: (String) -> Unit,
+    onSeverityChange: (Int) -> Unit,
+    onSave: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Fehler dokumentieren") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "Was ist passiert? Diese Information hilft beim nächsten Mal.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = onDescriptionChange,
+                    label = { Text("Fehlerbeschreibung") },
+                    placeholder = { Text("z.B. N und PE vertauscht") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    text = "Schweregrad",
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    SeverityChip("Niedrig", 1, severity, ErrorSeverityLow, onSeverityChange)
+                    SeverityChip("Mittel", 3, severity, ErrorSeverityMedium, onSeverityChange)
+                    SeverityChip("Hoch", 5, severity, ErrorSeverityHigh, onSeverityChange)
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onSave,
+                enabled = description.isNotBlank()
+            ) {
+                Text("Speichern")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Abbrechen")
+            }
+        }
+    )
+}
+
+@Composable
+private fun SeverityChip(
+    label: String,
+    value: Int,
+    current: Int,
+    color: androidx.compose.ui.graphics.Color,
+    onClick: (Int) -> Unit
+) {
+    FilterChip(
+        selected = current == value,
+        onClick = { onClick(value) },
+        label = { Text(label) },
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = color.copy(alpha = 0.3f)
+        )
+    )
 }

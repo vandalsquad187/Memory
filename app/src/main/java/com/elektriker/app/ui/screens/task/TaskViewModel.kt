@@ -240,4 +240,46 @@ class TaskViewModel @Inject constructor(
             stepRepository.setStepDone(stepId, isDone)
         }
     }
+
+    private val _editErrorDialog = MutableStateFlow(EditErrorState())
+    val editErrorDialog: StateFlow<EditErrorState> = _editErrorDialog.asStateFlow()
+
+    fun showEditErrorDialog() {
+        _editErrorDialog.update { it.copy(showDialog = true) }
+    }
+
+    fun hideEditErrorDialog() {
+        _editErrorDialog.update { EditErrorState() }
+    }
+
+    fun updateEditErrorDescription(desc: String) {
+        _editErrorDialog.update { it.copy(description = desc) }
+    }
+
+    fun updateEditErrorSeverity(severity: Int) {
+        _editErrorDialog.update { it.copy(severity = severity) }
+    }
+
+    fun saveEditError() {
+        val s = _editErrorDialog.value
+        val t = _task.value
+        if (s.description.isBlank() || t == null) return
+
+        viewModelScope.launch {
+            errorLogRepository.logError(
+                taskCategory = t.category,
+                description = s.description,
+                severity = s.severity,
+                taskId = t.id
+            )
+            _editErrorDialog.update { EditErrorState() }
+            loadWarningsForCategory(t.category)
+        }
+    }
 }
+
+data class EditErrorState(
+    val showDialog: Boolean = false,
+    val description: String = "",
+    val severity: Int = 3
+)
