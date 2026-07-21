@@ -18,6 +18,9 @@ interface SkillDao {
     @Query("SELECT * FROM skills WHERE category = :category OR category = ''")
     suspend fun getSkillsForCategoryOnce(category: String): List<SkillEntity>
 
+    @Query("SELECT * FROM skills")
+    suspend fun getAllSkillsOnce(): List<SkillEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSkill(skill: SkillEntity)
 

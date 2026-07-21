@@ -27,6 +27,7 @@ class DatabaseSeeder(
 
         seedErrorCauses(db)
         seedSkills(db)
+        seedAchievements(db)
 
         db.execSQL(
             """INSERT OR IGNORE INTO workflow_templates (id, name, category, stepsJson, isBuiltIn, usageCount, createdAt)
@@ -99,6 +100,36 @@ class DatabaseSeeder(
             db.execSQL(
                 """INSERT OR IGNORE INTO skills (id, name, category, description, iconName, currentXp, level, maxLevel, nextLevelXp)
                    VALUES ('${uuid()}','${name.replace("'", "''")}','$category','${description.replace("'", "''")}','',0,1,10,100)"""
+            )
+        }
+    }
+
+    private suspend fun seedAchievements(db: SupportSQLiteDatabase) {
+        val achievements = listOf(
+            listOf("first_task", "Erste Arbeit", "Erstelle deine erste Arbeit", "", 0),
+            listOf("five_tasks", "Fleißig", "Erstelle 5 Arbeiten", "", 0),
+            listOf("error_free", "Fehlerfrei", "Schließe eine Arbeit ohne Fehler ab", "", 0),
+            listOf("first_error", "Aus Fehlern lernt man", "Dokumentiere deinen ersten Fehler", "", 0),
+            listOf("solutions_5", "Lösungsfinder", "Dokumentiere 5 Fehler mit Lösung", "", 1),
+            listOf("skill_level_5", "Aufsteiger", "Erreiche Level 5 in einem Skill", "", 1),
+            listOf("rating_5", "Perfektionist", "Gib eine 5-Sterne-Bewertung", "", 0),
+            listOf("all_categories", "Alleskönner", "Nutze alle Kategorien", "", 1),
+            listOf("streak_7", "Woche voll", "7 Tage am Stück gearbeitet", "", 1),
+            listOf("streak_30", "Eisern", "30 Tage am Stück gearbeitet", "", 2),
+            listOf("ten_projects", "Projektleiter", "Erstelle 10 Projekte", "", 1),
+            listOf("skill_max", "Meister", "Erreiche Max-Level in einem Skill", "", 2),
+            listOf("hundred_tasks", "100. Arbeit", "100 Arbeiten erstellt", "", 2),
+            listOf("all_max_levels", "Alles-Meister", "Alle Skills auf Max-Level", "", 3),
+            listOf("master_electrician", "Elektromeister", "Alle Erfolge freigeschaltet", "", 3)
+        )
+        achievements.forEach { a ->
+            val id = a[0] as String
+            val name = (a[1] as String).replace("'", "''")
+            val desc = (a[2] as String).replace("'", "''")
+            val tier = a[4] as Int
+            db.execSQL(
+                """INSERT OR IGNORE INTO achievements (id, name, description, iconName, tier, isUnlocked, unlockedAt, isBuiltIn)
+                   VALUES ('$id','$name','$desc','',$tier,0,NULL,1)"""
             )
         }
     }

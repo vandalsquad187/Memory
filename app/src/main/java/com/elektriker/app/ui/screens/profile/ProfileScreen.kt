@@ -189,6 +189,21 @@ fun ProfileScreen(
             }
 
             item {
+                Button(
+                    onClick = { navController.navigate(Screen.Achievements.route) },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                ) {
+                    Icon(Icons.Default.EmojiEvents, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Erfolge")
+                }
+            }
+
+            item {
                 OutlinedButton(
                     onClick = { navController.navigate(Screen.ErrorHistory.route) },
                     modifier = Modifier.fillMaxWidth().height(48.dp)

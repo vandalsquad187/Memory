@@ -43,7 +43,8 @@ class TaskViewModel @Inject constructor(
     private val templateRepository: TemplateRepository,
     private val voiceRecorder: VoiceRecorder,
     private val errorCauseRepository: ErrorCauseRepository,
-    private val skillRepository: SkillRepository
+    private val skillRepository: SkillRepository,
+    private val gamificationManager: com.elektriker.app.service.GamificationManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(NewTaskUiState())
@@ -154,6 +155,9 @@ class TaskViewModel @Inject constructor(
 
             earnXpForCategory(s.category, 10)
 
+            gamificationManager.checkOnTaskCreated(s.category)
+            gamificationManager.checkOnStreak()
+
             _state.update {
                 it.copy(isSaving = false, savedTaskId = task.id)
             }
@@ -254,6 +258,8 @@ class TaskViewModel @Inject constructor(
             taskRepository.updateTask(t.copy(isCompleted = allDone))
             if (allDone) {
                 earnXpForCategory(t.category, 50)
+                gamificationManager.checkOnTaskCompleted(t.id)
+                gamificationManager.checkOnSkillChange()
             }
             loadTask(t.id)
         }
@@ -272,6 +278,8 @@ class TaskViewModel @Inject constructor(
             taskRepository.updateTask(t.copy(rating = rating))
             _task.update { it?.copy(rating = rating) }
             earnXpForCategory(t.category, rating * 10)
+            gamificationManager.checkOnRatingGiven(rating)
+            gamificationManager.checkOnSkillChange()
         }
     }
 
@@ -332,6 +340,9 @@ class TaskViewModel @Inject constructor(
             }
             _editErrorDialog.update { EditErrorState() }
             loadWarningsForCategory(t.category)
+            gamificationManager.checkOnErrorLogged(
+                errorsWithSolutionCount = errorLogRepository.getErrorsWithSolutionCount()
+            )
         }
     }
 }

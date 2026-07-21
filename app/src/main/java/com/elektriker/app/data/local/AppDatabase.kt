@@ -17,9 +17,10 @@ import com.elektriker.app.data.local.entity.*
         PhotoEntity::class,
         ProjectEntity::class,
         ErrorCauseEntity::class,
-        SkillEntity::class
+        SkillEntity::class,
+        AchievementEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -32,6 +33,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun projectDao(): ProjectDao
     abstract fun errorCauseDao(): ErrorCauseDao
     abstract fun skillDao(): SkillDao
+    abstract fun achievementDao(): AchievementDao
 
     companion object {
         val seederCallback = DatabaseSeeder()

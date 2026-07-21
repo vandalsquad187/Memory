@@ -52,14 +52,8 @@ class ErrorLogRepository @Inject constructor(
     suspend fun getErrorById(id: String): ErrorLogEntity? =
         errorLogDao.getErrorById(id)
 
-    suspend fun markAvoided(id: String) {
-        errorLogDao.updateError(
-            ErrorLogEntity(
-                id = id, taskCategory = "", description = "",
-                severity = 0, date = 0, taskId = null, wasAvoided = true
-            )
-        )
-    }
+    suspend fun getErrorsWithSolutionCount(): Int =
+        errorLogDao.getErrorsWithSolutionCount()
 
     fun getErrorStats(): Flow<List<com.elektriker.app.data.local.dao.ErrorCategoryStats>> =
         errorLogDao.getErrorStatsByCategory()

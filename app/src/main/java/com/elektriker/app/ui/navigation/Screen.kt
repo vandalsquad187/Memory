@@ -25,5 +25,6 @@ sealed class Screen(val route: String) {
     data object ErrorHistory : Screen("error_history")
     data object Skills : Screen("skills")
     data object Insights : Screen("insights")
+    data object Achievements : Screen("achievements")
     data object TemplatePicker : Screen("template_picker")
 }

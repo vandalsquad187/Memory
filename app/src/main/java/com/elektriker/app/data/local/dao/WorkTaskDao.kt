@@ -47,4 +47,13 @@ interface WorkTaskDao {
 
     @Query("SELECT COUNT(*) FROM work_tasks WHERE isCompleted = 1")
     fun getCompletedTaskCount(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM work_tasks")
+    suspend fun getTaskCountOnce(): Int
+
+    @Query("SELECT DISTINCT category FROM work_tasks")
+    suspend fun getAllUsedCategoriesOnce(): List<String>
+
+    @Query("SELECT date FROM work_tasks ORDER BY date DESC")
+    suspend fun getAllTaskDates(): List<Long>
 }

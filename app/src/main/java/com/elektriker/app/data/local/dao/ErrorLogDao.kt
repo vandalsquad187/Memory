@@ -50,6 +50,12 @@ interface ErrorLogDao {
 
     @Query("SELECT COUNT(*) FROM error_logs WHERE taskCategory = :category")
     suspend fun getErrorCountByCategory(category: String): Int
+
+    @Query("SELECT COUNT(*) FROM error_logs WHERE taskId = :taskId")
+    suspend fun getErrorCountByTask(taskId: String): Int
+
+    @Query("SELECT COUNT(*) FROM error_logs WHERE solution != ''")
+    suspend fun getErrorsWithSolutionCount(): Int
 }
 
 data class ErrorCategoryStats(
