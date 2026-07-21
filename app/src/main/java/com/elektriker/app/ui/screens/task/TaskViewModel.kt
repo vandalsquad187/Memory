@@ -122,7 +122,7 @@ class TaskViewModel @Inject constructor(
         _state.update { it.copy(photoPaths = it.photoPaths + path) }
     }
 
-    fun saveTask() {
+    fun saveTask(projectId: String? = null) {
         viewModelScope.launch {
             val s = _state.value
             if (s.title.isBlank()) return@launch
@@ -135,7 +135,7 @@ class TaskViewModel @Inject constructor(
                 description = s.description,
                 location = s.location,
                 customerName = s.customerName,
-                projectId = null,
+                projectId = projectId,
                 durationSeconds = 0
             )
 

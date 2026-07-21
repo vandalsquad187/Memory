@@ -30,6 +30,7 @@ import com.elektriker.app.util.Constants
 @Composable
 fun NewTaskScreen(
     navController: NavController,
+    preSelectedProjectId: String? = null,
     viewModel: TaskViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -81,7 +82,7 @@ fun NewTaskScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Button(
-                    onClick = { viewModel.saveTask() },
+                    onClick = { viewModel.saveTask(projectId = preSelectedProjectId) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp)

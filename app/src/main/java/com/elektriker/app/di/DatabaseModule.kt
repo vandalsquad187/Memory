@@ -23,7 +23,9 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             Constants.DB_NAME
-        ).addCallback(AppDatabase.seederCallback).build()
+        ).addCallback(AppDatabase.seederCallback)
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides fun provideWorkTaskDao(db: AppDatabase): WorkTaskDao = db.workTaskDao()
@@ -32,4 +34,5 @@ object DatabaseModule {
     @Provides fun provideKnowledgeBaseDao(db: AppDatabase): KnowledgeBaseDao = db.knowledgeBaseDao()
     @Provides fun provideWorkflowTemplateDao(db: AppDatabase): WorkflowTemplateDao = db.workflowTemplateDao()
     @Provides fun providePhotoDao(db: AppDatabase): PhotoDao = db.photoDao()
+    @Provides fun provideProjectDao(db: AppDatabase): ProjectDao = db.projectDao()
 }

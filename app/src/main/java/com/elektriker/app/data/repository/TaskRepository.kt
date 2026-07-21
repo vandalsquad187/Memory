@@ -22,6 +22,9 @@ class TaskRepository @Inject constructor(
 
     fun searchTasks(query: String): Flow<List<WorkTaskEntity>> = taskDao.searchTasks(query)
 
+    fun getTasksByProjectId(projectId: String): Flow<List<WorkTaskEntity>> =
+        taskDao.getTasksByProjectId(projectId)
+
     fun getAllCategories(): Flow<List<String>> = taskDao.getAllCategories()
 
     fun getTaskCount(): Flow<Int> = taskDao.getTaskCount()

@@ -11,5 +11,7 @@ data class ErrorLogEntity(
     val severity: Int,
     val date: Long,
     val taskId: String?,
-    val wasAvoided: Boolean
+    val wasAvoided: Boolean,
+    val causes: String = "",
+    val solution: String = ""
 )

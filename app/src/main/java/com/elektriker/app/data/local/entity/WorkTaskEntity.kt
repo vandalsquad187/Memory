@@ -18,5 +18,9 @@ data class WorkTaskEntity(
     val voiceNotePath: String?,
     val createdAt: Long,
     val updatedAt: Long,
-    val isCompleted: Boolean
+    val isCompleted: Boolean,
+    val materials: String = "",
+    val tools: String = "",
+    val solution: String = "",
+    val rating: Int = 0
 )

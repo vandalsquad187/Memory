@@ -14,6 +14,13 @@ sealed class Screen(val route: String) {
     data object KnowledgeDetail : Screen("knowledge/{entryId}") {
         fun createRoute(entryId: String) = "knowledge/$entryId"
     }
+    data object Projects : Screen("projects")
+    data object ProjectDetail : Screen("project_detail/{projectId}") {
+        fun createRoute(projectId: String) = "project_detail/$projectId"
+    }
+    data object NewTaskWithProject : Screen("new_task/{projectId}") {
+        fun createRoute(projectId: String) = "new_task/$projectId"
+    }
     data object Profile : Screen("profile")
     data object TemplatePicker : Screen("template_picker")
 }

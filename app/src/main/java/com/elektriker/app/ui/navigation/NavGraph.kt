@@ -11,6 +11,8 @@ import com.elektriker.app.ui.screens.history.HistoryScreen
 import com.elektriker.app.ui.screens.home.HomeScreen
 import com.elektriker.app.ui.screens.knowledge.KnowledgeScreen
 import com.elektriker.app.ui.screens.profile.ProfileScreen
+import com.elektriker.app.ui.screens.project.ProjectDetailScreen
+import com.elektriker.app.ui.screens.project.ProjectScreen
 import com.elektriker.app.ui.screens.task.NewTaskScreen
 import com.elektriker.app.ui.screens.task.TaskDetailScreen
 
@@ -26,8 +28,28 @@ fun AppNavGraph(
             HomeScreen(navController = navController)
         }
 
+        composable(Screen.Projects.route) {
+            ProjectScreen(navController = navController)
+        }
+
+        composable(
+            route = Screen.ProjectDetail.route,
+            arguments = listOf(navArgument("projectId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val projectId = backStackEntry.arguments?.getString("projectId") ?: return@composable
+            ProjectDetailScreen(
+                projectId = projectId,
+                navController = navController
+            )
+        }
+
         composable(Screen.NewTask.route) {
             NewTaskScreen(navController = navController)
+        }
+
+        composable(Screen.NewTaskWithProject.route) { backStackEntry ->
+            val projectId = backStackEntry.arguments?.getString("projectId") ?: return@composable
+            NewTaskScreen(navController = navController, preSelectedProjectId = projectId)
         }
 
         composable(

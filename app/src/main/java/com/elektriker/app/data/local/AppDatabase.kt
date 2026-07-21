@@ -17,7 +17,7 @@ import com.elektriker.app.data.local.entity.*
         PhotoEntity::class,
         ProjectEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -27,6 +27,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun knowledgeBaseDao(): KnowledgeBaseDao
     abstract fun workflowTemplateDao(): WorkflowTemplateDao
     abstract fun photoDao(): PhotoDao
+    abstract fun projectDao(): ProjectDao
 
     companion object {
         val seederCallback = DatabaseSeeder()

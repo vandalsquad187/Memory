@@ -21,6 +21,9 @@ interface WorkTaskDao {
     @Query("SELECT * FROM work_tasks WHERE customerName LIKE '%' || :query || '%' OR title LIKE '%' || :query || '%' OR location LIKE '%' || :query || '%' ORDER BY date DESC")
     fun searchTasks(query: String): Flow<List<WorkTaskEntity>>
 
+    @Query("SELECT * FROM work_tasks WHERE projectId = :projectId ORDER BY date DESC")
+    fun getTasksByProjectId(projectId: String): Flow<List<WorkTaskEntity>>
+
     @Query("SELECT * FROM work_tasks WHERE isCompleted = 0 ORDER BY date DESC")
     fun getActiveTasks(): Flow<List<WorkTaskEntity>>
 
