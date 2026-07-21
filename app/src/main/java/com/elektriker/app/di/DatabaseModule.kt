@@ -36,4 +36,5 @@ object DatabaseModule {
     @Provides fun providePhotoDao(db: AppDatabase): PhotoDao = db.photoDao()
     @Provides fun provideProjectDao(db: AppDatabase): ProjectDao = db.projectDao()
     @Provides fun provideErrorCauseDao(db: AppDatabase): ErrorCauseDao = db.errorCauseDao()
+    @Provides fun provideSkillDao(db: AppDatabase): SkillDao = db.skillDao()
 }

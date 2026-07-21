@@ -174,6 +174,21 @@ fun ProfileScreen(
             }
 
             item {
+                Button(
+                    onClick = { navController.navigate(Screen.Skills.route) },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                ) {
+                    Icon(Icons.Default.AutoAwesome, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Skills & Erfahrung")
+                }
+            }
+
+            item {
                 OutlinedButton(
                     onClick = { navController.navigate(Screen.ErrorHistory.route) },
                     modifier = Modifier.fillMaxWidth().height(48.dp)

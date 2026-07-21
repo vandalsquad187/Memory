@@ -26,6 +26,7 @@ class DatabaseSeeder(
         val now = System.currentTimeMillis()
 
         seedErrorCauses(db)
+        seedSkills(db)
 
         db.execSQL(
             """INSERT OR IGNORE INTO workflow_templates (id, name, category, stepsJson, isBuiltIn, usageCount, createdAt)
@@ -76,6 +77,28 @@ class DatabaseSeeder(
                    VALUES ('${uuid()}','${
                     label.replace("'", "''")
                 }','${desc.replace("'", "''")}','')"""
+            )
+        }
+    }
+
+    private suspend fun seedSkills(db: SupportSQLiteDatabase) {
+        val skills = listOf(
+            Triple("UV-Verdrahtung", Constants.Categories.UV, "Unterverteilungen fachgerecht verdrahten und prüfen"),
+            Triple("RCD-Prüfung", Constants.Categories.RCD, "FI-Schalter korrekt prüfen und dokumentieren"),
+            Triple("Messung & Prüfung", Constants.Categories.MESSUNG, "Schleifenimpedanz, Isolationswiderstand und Co."),
+            Triple("Schalter & Steckdosen", Constants.Categories.SCHALTER, "Installation und Prüfung von Schaltern und Steckdosen"),
+            Triple("Sicherheitstechnik", Constants.Categories.SICHERHEIT, "Brandmelder, Alarmanlagen, Sicherheitsbeleuchtung"),
+            Triple("Verdrahtung & Anschluss", Constants.Categories.VERDRAHTUNG, "Korrekte Verdrahtung von Geräten und Anlagen"),
+            Triple("Fehlersuche & Diagnose", "", "Systematische Fehlersuche in elektrischen Anlagen"),
+            Triple("Sicherheit & Vorschriften", "", "Arbeitssicherheit, TAB, DIN VDE Normen"),
+            Triple("Beleuchtung", Constants.Categories.BELEUCHTUNG, "Beleuchtungsanlagen und Klimasteuerung"),
+            Triple("Zähler & Netz", Constants.Categories.ZAEHLER, "Zähleranlagen und Netzanschluss"),
+            Triple("Sonstiges", Constants.Categories.SONSTIGES, "Allgemeine Elektroarbeiten")
+        )
+        skills.forEach { (name, category, description) ->
+            db.execSQL(
+                """INSERT OR IGNORE INTO skills (id, name, category, description, iconName, currentXp, level, maxLevel, nextLevelXp)
+                   VALUES ('${uuid()}','${name.replace("'", "''")}','$category','${description.replace("'", "''")}','',0,1,10,100)"""
             )
         }
     }

@@ -23,5 +23,6 @@ sealed class Screen(val route: String) {
     }
     data object Profile : Screen("profile")
     data object ErrorHistory : Screen("error_history")
+    data object Skills : Screen("skills")
     data object TemplatePicker : Screen("template_picker")
 }

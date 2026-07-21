@@ -42,7 +42,8 @@ class TaskViewModel @Inject constructor(
     private val errorLogRepository: ErrorLogRepository,
     private val templateRepository: TemplateRepository,
     private val voiceRecorder: VoiceRecorder,
-    private val errorCauseRepository: ErrorCauseRepository
+    private val errorCauseRepository: ErrorCauseRepository,
+    private val skillRepository: SkillRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(NewTaskUiState())
@@ -151,6 +152,8 @@ class TaskViewModel @Inject constructor(
                 }
             }
 
+            earnXpForCategory(s.category, 10)
+
             _state.update {
                 it.copy(isSaving = false, savedTaskId = task.id)
             }
@@ -249,7 +252,17 @@ class TaskViewModel @Inject constructor(
         val allDone = allSteps.isNotEmpty() && allSteps.all { it.isDone }
         if (allDone != t.isCompleted) {
             taskRepository.updateTask(t.copy(isCompleted = allDone))
+            if (allDone) {
+                earnXpForCategory(t.category, 50)
+            }
             loadTask(t.id)
+        }
+    }
+
+    private suspend fun earnXpForCategory(category: String, xp: Int) {
+        val skills = skillRepository.getSkillsForCategoryOnce(category)
+        skills.forEach { skill ->
+            skillRepository.addXp(skill.id, xp)
         }
     }
 
@@ -258,6 +271,7 @@ class TaskViewModel @Inject constructor(
             val t = _task.value ?: return@launch
             taskRepository.updateTask(t.copy(rating = rating))
             _task.update { it?.copy(rating = rating) }
+            earnXpForCategory(t.category, rating * 10)
         }
     }
 
@@ -313,6 +327,9 @@ class TaskViewModel @Inject constructor(
                 causeIds = s.selectedCauseIds.toList(),
                 solution = s.solution
             )
+            if (s.solution.isNotBlank()) {
+                earnXpForCategory(t.category, 30)
+            }
             _editErrorDialog.update { EditErrorState() }
             loadWarningsForCategory(t.category)
         }
