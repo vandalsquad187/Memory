@@ -19,8 +19,11 @@ object Constants {
         const val BELEUCHTUNG = "Beleuchtung"
         const val ZAEHLER = "Zähleranlage"
         const val SONSTIGES = "Sonstiges"
+        const val NETZWERK = "Netzwerk / Datenverkabelung"
+        const val STEUERUNG = "Steuerung / Automatisierung"
+        const val INSTALLATION = "Installation"
 
-        val all = listOf(UV, MESSUNG, SICHERHEIT, VERDRAHTUNG, RCD, SCHALTER, BELEUCHTUNG, ZAEHLER, SONSTIGES)
+        val all = listOf(UV, MESSUNG, SICHERHEIT, VERDRAHTUNG, RCD, SCHALTER, BELEUCHTUNG, ZAEHLER, SONSTIGES, NETZWERK, STEUERUNG, INSTALLATION)
     }
 
     object BuiltInTemplates {
