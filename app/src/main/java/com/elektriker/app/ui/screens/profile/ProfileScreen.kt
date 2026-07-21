@@ -173,6 +173,17 @@ fun ProfileScreen(
                 }
             }
 
+            item {
+                OutlinedButton(
+                    onClick = { navController.navigate(Screen.ErrorHistory.route) },
+                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                ) {
+                    Icon(Icons.Default.List, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Alle Fehler anzeigen")
+                }
+            }
+
             item { Spacer(modifier = Modifier.height(80.dp)) }
         }
     }

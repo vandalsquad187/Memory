@@ -30,7 +30,8 @@ class ErrorLogRepository @Inject constructor(
         taskCategory: String,
         description: String,
         severity: Int,
-        taskId: String? = null
+        taskId: String? = null,
+        causeIds: List<String> = emptyList()
     ): ErrorLogEntity {
         val error = ErrorLogEntity(
             id = UUID.randomUUID().toString(),
@@ -39,11 +40,15 @@ class ErrorLogRepository @Inject constructor(
             severity = severity,
             date = System.currentTimeMillis(),
             taskId = taskId,
-            wasAvoided = false
+            wasAvoided = false,
+            causeIds = causeIds.joinToString(",")
         )
         errorLogDao.insertError(error)
         return error
     }
+
+    suspend fun getErrorById(id: String): ErrorLogEntity? =
+        errorLogDao.getErrorById(id)
 
     suspend fun markAvoided(id: String) {
         errorLogDao.updateError(

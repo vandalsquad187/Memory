@@ -22,5 +22,6 @@ sealed class Screen(val route: String) {
         fun createRoute(projectId: String) = "new_task/$projectId"
     }
     data object Profile : Screen("profile")
+    data object ErrorHistory : Screen("error_history")
     data object TemplatePicker : Screen("template_picker")
 }

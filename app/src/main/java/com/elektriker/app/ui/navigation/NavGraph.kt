@@ -10,6 +10,7 @@ import com.elektriker.app.ui.screens.assistant.AssistantScreen
 import com.elektriker.app.ui.screens.history.HistoryScreen
 import com.elektriker.app.ui.screens.home.HomeScreen
 import com.elektriker.app.ui.screens.knowledge.KnowledgeScreen
+import com.elektriker.app.ui.screens.errorhistory.ErrorHistoryScreen
 import com.elektriker.app.ui.screens.profile.ProfileScreen
 import com.elektriker.app.ui.screens.project.ProjectDetailScreen
 import com.elektriker.app.ui.screens.project.ProjectScreen
@@ -84,6 +85,10 @@ fun AppNavGraph(
 
         composable(Screen.Profile.route) {
             ProfileScreen(navController = navController)
+        }
+
+        composable(Screen.ErrorHistory.route) {
+            ErrorHistoryScreen(navController = navController)
         }
     }
 }

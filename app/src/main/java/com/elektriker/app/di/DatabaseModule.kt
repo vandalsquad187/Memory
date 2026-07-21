@@ -35,4 +35,5 @@ object DatabaseModule {
     @Provides fun provideWorkflowTemplateDao(db: AppDatabase): WorkflowTemplateDao = db.workflowTemplateDao()
     @Provides fun providePhotoDao(db: AppDatabase): PhotoDao = db.photoDao()
     @Provides fun provideProjectDao(db: AppDatabase): ProjectDao = db.projectDao()
+    @Provides fun provideErrorCauseDao(db: AppDatabase): ErrorCauseDao = db.errorCauseDao()
 }

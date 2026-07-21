@@ -41,7 +41,8 @@ class TaskViewModel @Inject constructor(
     private val stepRepository: StepRepository,
     private val errorLogRepository: ErrorLogRepository,
     private val templateRepository: TemplateRepository,
-    private val voiceRecorder: VoiceRecorder
+    private val voiceRecorder: VoiceRecorder,
+    private val errorCauseRepository: ErrorCauseRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(NewTaskUiState())
@@ -241,11 +242,17 @@ class TaskViewModel @Inject constructor(
         }
     }
 
-    private val _editErrorDialog = MutableStateFlow(EditErrorState())
+        private val _editErrorDialog = MutableStateFlow(EditErrorState())
     val editErrorDialog: StateFlow<EditErrorState> = _editErrorDialog.asStateFlow()
 
     fun showEditErrorDialog() {
+        val t = _task.value ?: return
         _editErrorDialog.update { it.copy(showDialog = true) }
+        viewModelScope.launch {
+            errorCauseRepository.getCausesForCategory(t.category).collect { causes ->
+                _editErrorDialog.update { it.copy(availableCauses = causes) }
+            }
+        }
     }
 
     fun hideEditErrorDialog() {
@@ -260,6 +267,15 @@ class TaskViewModel @Inject constructor(
         _editErrorDialog.update { it.copy(severity = severity) }
     }
 
+    fun toggleEditErrorCause(causeId: String) {
+        _editErrorDialog.update { state ->
+            val selected = state.selectedCauseIds.toMutableSet()
+            if (selected.contains(causeId)) selected.remove(causeId)
+            else selected.add(causeId)
+            state.copy(selectedCauseIds = selected)
+        }
+    }
+
     fun saveEditError() {
         val s = _editErrorDialog.value
         val t = _task.value
@@ -270,7 +286,8 @@ class TaskViewModel @Inject constructor(
                 taskCategory = t.category,
                 description = s.description,
                 severity = s.severity,
-                taskId = t.id
+                taskId = t.id,
+                causeIds = s.selectedCauseIds.toList()
             )
             _editErrorDialog.update { EditErrorState() }
             loadWarningsForCategory(t.category)
@@ -281,5 +298,7 @@ class TaskViewModel @Inject constructor(
 data class EditErrorState(
     val showDialog: Boolean = false,
     val description: String = "",
-    val severity: Int = 3
+    val severity: Int = 3,
+    val availableCauses: List<com.elektriker.app.data.local.entity.ErrorCauseEntity> = emptyList(),
+    val selectedCauseIds: Set<String> = emptySet()
 )

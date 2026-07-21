@@ -25,6 +25,8 @@ class DatabaseSeeder(
     private suspend fun seedData(db: SupportSQLiteDatabase) {
         val now = System.currentTimeMillis()
 
+        seedErrorCauses(db)
+
         db.execSQL(
             """INSERT OR IGNORE INTO workflow_templates (id, name, category, stepsJson, isBuiltIn, usageCount, createdAt)
                VALUES ('${UUID.randomUUID()}', 'Unterverteilung verdrahten', '${Constants.Categories.UV}',
@@ -52,4 +54,31 @@ class DatabaseSeeder(
                'Schleifenimpedanz, Messung, Grenzwerte, LS', '${Constants.Categories.MESSUNG}', 1, NULL, $now, $now)"""
         )
     }
+
+    private suspend fun seedErrorCauses(db: SupportSQLiteDatabase) {
+        val causes = listOf(
+            "Spannung nicht geprüft" to "Vor Arbeitsbeginn Spannungsfreiheit messen",
+            "Kabelquerschnitt falsch gewählt" to "Querschnitt an Last und Absicherung anpassen",
+            "Adern vertauscht (N/PE/L)" to "Farbcodierung beachten: PE grün-gelb, N blau",
+            "Sicherung nicht ausgeschaltet" to "Vor Arbeiten allpolig freischalten",
+            "Werkzeug falsch verwendet" to "Geeignetes und geprüftes Werkzeug nutzen",
+            "Vorschrift nicht beachtet" to "Aktuelle Normen und TAB einhalten",
+            "Messung fehlerhaft durchgeführt" to "Messgerät prüfen und korrekt anschließen",
+            "Bauteilbeschriftung übersehen" to "Typenschild und Anschlussplan lesen",
+            "Dokumentation nicht gelesen" to "Bestandspläne und Herstellerangaben prüfen",
+            "Zeitdruck / Hektik" to "Lieber einmal mehr kontrollieren",
+            "Schutzart nicht beachtet" to "IP-Schutzart an Umgebung anpassen",
+            "Leitungsschutz falsch dimensioniert" to "Auslösecharakteristik und Last prüfen"
+        )
+        causes.forEach { (label, desc) ->
+            db.execSQL(
+                """INSERT OR IGNORE INTO error_causes (id, label, description, category)
+                   VALUES ('${uuid()}','${
+                    label.replace("'", "''")
+                }','${desc.replace("'", "''")}','')"""
+            )
+        }
+    }
+
+    private fun uuid() = UUID.randomUUID().toString()
 }

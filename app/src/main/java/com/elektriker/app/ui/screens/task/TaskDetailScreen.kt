@@ -139,8 +139,11 @@ fun TaskDetailScreen(
         EditErrorInputDialog(
             description = editErrorState.description,
             severity = editErrorState.severity,
+            availableCauses = editErrorState.availableCauses,
+            selectedCauseIds = editErrorState.selectedCauseIds,
             onDescriptionChange = { viewModel.updateEditErrorDescription(it) },
             onSeverityChange = { viewModel.updateEditErrorSeverity(it) },
+            onCauseToggle = { viewModel.toggleEditErrorCause(it) },
             onSave = { viewModel.saveEditError() },
             onDismiss = { viewModel.hideEditErrorDialog() }
         )
@@ -465,8 +468,11 @@ private fun EditStepCard(
 private fun EditErrorInputDialog(
     description: String,
     severity: Int,
+    availableCauses: List<com.elektriker.app.data.local.entity.ErrorCauseEntity>,
+    selectedCauseIds: Set<String>,
     onDescriptionChange: (String) -> Unit,
     onSeverityChange: (Int) -> Unit,
+    onCauseToggle: (String) -> Unit,
     onSave: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -474,7 +480,10 @@ private fun EditErrorInputDialog(
         onDismissRequest = onDismiss,
         title = { Text("Fehler dokumentieren") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Text(
                     text = "Was ist passiert? Diese Information hilft beim nächsten Mal.",
                     style = MaterialTheme.typography.bodyMedium
@@ -486,6 +495,36 @@ private fun EditErrorInputDialog(
                     placeholder = { Text("z.B. N und PE vertauscht") },
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                if (availableCauses.isNotEmpty()) {
+                    Text(
+                        text = "Mögliche Ursachen",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                    availableCauses.forEach { cause ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Checkbox(
+                                checked = selectedCauseIds.contains(cause.id),
+                                onCheckedChange = { onCauseToggle(cause.id) }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(text = cause.label, style = MaterialTheme.typography.bodyMedium)
+                                if (cause.description.isNotBlank()) {
+                                    Text(
+                                        text = cause.description,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Text(
                     text = "Schweregrad",
                     style = MaterialTheme.typography.labelLarge

@@ -35,6 +35,12 @@ interface ErrorLogDao {
 
     @Query("DELETE FROM error_logs WHERE id = :id")
     suspend fun deleteErrorById(id: String)
+
+    @Query("SELECT * FROM error_logs WHERE taskId = :taskId ORDER BY date DESC")
+    fun getErrorsByTaskId(taskId: String): Flow<List<ErrorLogEntity>>
+
+    @Query("SELECT * FROM error_logs WHERE id = :id")
+    suspend fun getErrorById(id: String): ErrorLogEntity?
 }
 
 data class ErrorCategoryStats(

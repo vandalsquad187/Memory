@@ -13,5 +13,6 @@ data class ErrorLogEntity(
     val taskId: String?,
     val wasAvoided: Boolean,
     val causes: String = "",
+    val causeIds: String = "",
     val solution: String = ""
 )
