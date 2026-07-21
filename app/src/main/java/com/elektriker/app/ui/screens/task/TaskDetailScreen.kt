@@ -119,6 +119,9 @@ fun TaskDetailScreen(
                     .padding(padding)
             )
         } else {
+            val showRating = androidx.compose.runtime.remember(task) {
+                task?.isCompleted == true
+            }
             ReadOnlyTaskContent(
                 task = task,
                 steps = steps,
@@ -127,6 +130,9 @@ fun TaskDetailScreen(
                 onToggleStep = { stepId, done -> viewModel.toggleStepDone(stepId, done) },
                 onNavigateAssistant = {
                     navController.navigate(Screen.Assistant.createRoute(taskId))
+                },
+                onRatingChange = { rating ->
+                    viewModel.saveRating(rating)
                 },
                 modifier = Modifier
                     .fillMaxSize()
@@ -139,10 +145,12 @@ fun TaskDetailScreen(
         EditErrorInputDialog(
             description = editErrorState.description,
             severity = editErrorState.severity,
+            solution = editErrorState.solution,
             availableCauses = editErrorState.availableCauses,
             selectedCauseIds = editErrorState.selectedCauseIds,
             onDescriptionChange = { viewModel.updateEditErrorDescription(it) },
             onSeverityChange = { viewModel.updateEditErrorSeverity(it) },
+            onSolutionChange = { viewModel.updateEditErrorSolution(it) },
             onCauseToggle = { viewModel.toggleEditErrorCause(it) },
             onSave = { viewModel.saveEditError() },
             onDismiss = { viewModel.hideEditErrorDialog() }
@@ -158,6 +166,7 @@ private fun ReadOnlyTaskContent(
     taskId: String,
     onToggleStep: (String, Boolean) -> Unit,
     onNavigateAssistant: () -> Unit,
+    onRatingChange: ((Int) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -205,6 +214,13 @@ private fun ReadOnlyTaskContent(
                             )
                         }
                     }
+                }
+
+                if (t.isCompleted && onRatingChange != null) {
+                    StarRatingRow(
+                        currentRating = t.rating,
+                        onRatingChange = onRatingChange
+                    )
                 }
             }
 
@@ -468,10 +484,12 @@ private fun EditStepCard(
 private fun EditErrorInputDialog(
     description: String,
     severity: Int,
+    solution: String,
     availableCauses: List<com.elektriker.app.data.local.entity.ErrorCauseEntity>,
     selectedCauseIds: Set<String>,
     onDescriptionChange: (String) -> Unit,
     onSeverityChange: (Int) -> Unit,
+    onSolutionChange: (String) -> Unit,
     onCauseToggle: (String) -> Unit,
     onSave: () -> Unit,
     onDismiss: () -> Unit
@@ -525,6 +543,16 @@ private fun EditErrorInputDialog(
                     }
                 }
 
+                OutlinedTextField(
+                    value = solution,
+                    onValueChange = onSolutionChange,
+                    label = { Text("Lösung / Was hast du daraus gelernt?") },
+                    placeholder = { Text("z.B. Vor dem Abklemmen immer Spannung messen") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                )
+
                 Text(
                     text = "Schweregrad",
                     style = MaterialTheme.typography.labelLarge
@@ -552,6 +580,60 @@ private fun EditErrorInputDialog(
             }
         }
     )
+}
+
+@Composable
+private fun StarRatingRow(
+    currentRating: Int,
+    onRatingChange: (Int) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Arbeit bewerten",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                for (star in 1..5) {
+                    IconButton(onClick = { onRatingChange(star) }) {
+                        Icon(
+                            imageVector = if (star <= currentRating) Icons.Default.Star
+                                else Icons.Default.StarOutline,
+                            contentDescription = "$star Stern${if (star > 1) "e" else ""}",
+                            tint = if (star <= currentRating) MaterialTheme.colorScheme.tertiary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                }
+                if (currentRating > 0) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        text = when {
+                            currentRating <= 2 -> "Mangelhaft"
+                            currentRating == 3 -> "Befriedigend"
+                            currentRating == 4 -> "Gut"
+                            else -> "Sehr gut"
+                        },
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable

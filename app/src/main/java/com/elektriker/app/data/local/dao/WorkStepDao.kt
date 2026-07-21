@@ -9,6 +9,9 @@ interface WorkStepDao {
     @Query("SELECT * FROM work_steps WHERE taskId = :taskId ORDER BY stepOrder ASC")
     fun getStepsForTask(taskId: String): Flow<List<WorkStepEntity>>
 
+    @Query("SELECT * FROM work_steps WHERE taskId = :taskId ORDER BY stepOrder ASC")
+    suspend fun getStepsForTaskOnce(taskId: String): List<WorkStepEntity>
+
     @Query("SELECT * FROM work_steps WHERE id = :id")
     suspend fun getStepById(id: String): WorkStepEntity?
 

@@ -54,4 +54,7 @@ class StepRepository @Inject constructor(
         stepDao.setStepDone(stepId, isDone)
 
     suspend fun deleteStepsForTask(taskId: String) = stepDao.deleteStepsForTask(taskId)
+
+    suspend fun getStepsForTaskOnce(taskId: String): List<WorkStepEntity> =
+        stepDao.getStepsForTaskOnce(taskId)
 }

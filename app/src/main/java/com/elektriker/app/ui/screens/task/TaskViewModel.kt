@@ -239,6 +239,25 @@ class TaskViewModel @Inject constructor(
     fun toggleStepDone(stepId: String, isDone: Boolean) {
         viewModelScope.launch {
             stepRepository.setStepDone(stepId, isDone)
+            updateTaskCompletion()
+        }
+    }
+
+    private suspend fun updateTaskCompletion() {
+        val t = _task.value ?: return
+        val allSteps = stepRepository.getStepsForTaskOnce(t.id)
+        val allDone = allSteps.isNotEmpty() && allSteps.all { it.isDone }
+        if (allDone != t.isCompleted) {
+            taskRepository.updateTask(t.copy(isCompleted = allDone))
+            loadTask(t.id)
+        }
+    }
+
+    fun saveRating(rating: Int) {
+        viewModelScope.launch {
+            val t = _task.value ?: return@launch
+            taskRepository.updateTask(t.copy(rating = rating))
+            _task.update { it?.copy(rating = rating) }
         }
     }
 
@@ -267,6 +286,10 @@ class TaskViewModel @Inject constructor(
         _editErrorDialog.update { it.copy(severity = severity) }
     }
 
+    fun updateEditErrorSolution(solution: String) {
+        _editErrorDialog.update { it.copy(solution = solution) }
+    }
+
     fun toggleEditErrorCause(causeId: String) {
         _editErrorDialog.update { state ->
             val selected = state.selectedCauseIds.toMutableSet()
@@ -287,7 +310,8 @@ class TaskViewModel @Inject constructor(
                 description = s.description,
                 severity = s.severity,
                 taskId = t.id,
-                causeIds = s.selectedCauseIds.toList()
+                causeIds = s.selectedCauseIds.toList(),
+                solution = s.solution
             )
             _editErrorDialog.update { EditErrorState() }
             loadWarningsForCategory(t.category)
@@ -299,6 +323,7 @@ data class EditErrorState(
     val showDialog: Boolean = false,
     val description: String = "",
     val severity: Int = 3,
+    val solution: String = "",
     val availableCauses: List<com.elektriker.app.data.local.entity.ErrorCauseEntity> = emptyList(),
     val selectedCauseIds: Set<String> = emptySet()
 )
