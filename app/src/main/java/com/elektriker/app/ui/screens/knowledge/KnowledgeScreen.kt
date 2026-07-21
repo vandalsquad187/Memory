@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -118,6 +119,7 @@ fun KnowledgeScreen(
                     items(state.entries) { entry ->
                         KnowledgeCard(
                             entry = entry,
+                            onClick = { viewModel.openEntry(entry) },
                             onToggleFavorite = {
                                 viewModel.toggleFavorite(entry.id, !entry.isFavorite)
                             }
@@ -136,6 +138,173 @@ fun KnowledgeScreen(
             }
         )
     }
+
+    state.editingEntry?.let { entry ->
+        KnowledgeDetailDialog(
+            entry = entry,
+            categories = state.categories,
+            onUpdate = { id, title, content, tags, category ->
+                viewModel.updateEntry(id, title, content, tags, category)
+            },
+            onDelete = { viewModel.deleteEntry(entry.id) },
+            onDismiss = { viewModel.closeEntry() }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun KnowledgeDetailDialog(
+    entry: KnowledgeBaseEntity,
+    categories: List<String>,
+    onUpdate: (id: String, title: String, content: String, tags: String, category: String) -> Unit,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    var isEditing by remember { mutableStateOf(false) }
+    var title by remember { mutableStateOf(entry.title) }
+    var content by remember { mutableStateOf(entry.content) }
+    var tags by remember { mutableStateOf(entry.tags) }
+    var category by remember { mutableStateOf(entry.category) }
+    var expanded by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isEditing) {
+                    Text("Eintrag bearbeiten", modifier = Modifier.weight(1f))
+                } else {
+                    Text(entry.title, modifier = Modifier.weight(1f))
+                }
+                IconButton(onClick = { isEditing = !isEditing }) {
+                    Icon(
+                        if (isEditing) Icons.Default.Close else Icons.Default.Edit,
+                        contentDescription = if (isEditing) "Bearbeiten beenden" else "Bearbeiten"
+                    )
+                }
+            }
+        },
+        text = {
+            if (isEditing) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text("Titel *") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = content,
+                        onValueChange = { content = it },
+                        label = { Text("Inhalt *") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                    )
+                    OutlinedTextField(
+                        value = tags,
+                        onValueChange = { tags = it },
+                        label = { Text("Tags (kommagetrennt)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded }
+                    ) {
+                        OutlinedTextField(
+                            value = category,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Kategorie") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true)
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            (if (categories.isNotEmpty()) categories else Constants.Categories.all).forEach { cat ->
+                                DropdownMenuItem(
+                                    text = { Text(cat) },
+                                    onClick = {
+                                        category = cat
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = entry.content,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    if (entry.tags.isNotBlank()) {
+                        Text(
+                            text = "Tags: ${entry.tags}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    Text(
+                        text = "Kategorie: ${entry.category}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            if (isEditing) {
+                TextButton(
+                    onClick = {
+                        onUpdate(entry.id, title, content, tags, category)
+                    },
+                    enabled = title.isNotBlank() && content.isNotBlank()
+                ) {
+                    Text("Speichern")
+                }
+            } else {
+                TextButton(onClick = onDismiss) {
+                    Text("Schließen")
+                }
+            }
+        },
+        dismissButton = {
+            if (isEditing) {
+                TextButton(onClick = { isEditing = false }) {
+                    Text("Abbrechen")
+                }
+            } else {
+                TextButton(
+                    onClick = onDelete,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Löschen")
+                }
+            }
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -230,9 +399,11 @@ private fun AddKnowledgeDialog(
 @Composable
 private fun KnowledgeCard(
     entry: KnowledgeBaseEntity,
+    onClick: () -> Unit,
     onToggleFavorite: () -> Unit
 ) {
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant

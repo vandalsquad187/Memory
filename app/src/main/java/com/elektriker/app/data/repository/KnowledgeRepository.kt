@@ -51,5 +51,24 @@ class KnowledgeRepository @Inject constructor(
         knowledgeBaseDao.setFavorite(id, isFavorite)
     }
 
+    suspend fun updateEntry(
+        id: String,
+        title: String,
+        content: String,
+        tags: String,
+        category: String
+    ) {
+        val existing = knowledgeBaseDao.getEntryById(id) ?: return
+        knowledgeBaseDao.updateEntry(
+            existing.copy(
+                title = title,
+                content = content,
+                tags = tags,
+                category = category,
+                updatedAt = System.currentTimeMillis()
+            )
+        )
+    }
+
     suspend fun deleteEntry(id: String) = knowledgeBaseDao.deleteEntryById(id)
 }

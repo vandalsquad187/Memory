@@ -14,7 +14,8 @@ data class KnowledgeUiState(
     val categories: List<String> = emptyList(),
     val searchQuery: String = "",
     val selectedCategory: String? = null,
-    val showFavoritesOnly: Boolean = false
+    val showFavoritesOnly: Boolean = false,
+    val editingEntry: KnowledgeBaseEntity? = null
 )
 
 @HiltViewModel
@@ -91,6 +92,28 @@ class KnowledgeViewModel @Inject constructor(
                 tags = tags,
                 category = category
             )
+        }
+    }
+
+    fun openEntry(entry: KnowledgeBaseEntity) {
+        _state.update { it.copy(editingEntry = entry) }
+    }
+
+    fun closeEntry() {
+        _state.update { it.copy(editingEntry = null) }
+    }
+
+    fun updateEntry(id: String, title: String, content: String, tags: String, category: String) {
+        viewModelScope.launch {
+            knowledgeRepository.updateEntry(id, title, content, tags, category)
+            closeEntry()
+        }
+    }
+
+    fun deleteEntry(id: String) {
+        viewModelScope.launch {
+            knowledgeRepository.deleteEntry(id)
+            closeEntry()
         }
     }
 }
