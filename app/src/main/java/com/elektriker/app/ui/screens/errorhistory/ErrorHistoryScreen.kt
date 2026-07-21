@@ -187,7 +187,7 @@ private fun ErrorHistoryCard(
 
             if (error.solution.isNotBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Divider()
+                HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Lösung: ${error.solution}",

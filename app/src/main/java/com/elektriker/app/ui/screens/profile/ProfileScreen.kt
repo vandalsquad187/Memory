@@ -75,10 +75,12 @@ fun ProfileScreen(
                         color = GreenSuccess,
                         modifier = Modifier.weight(1f)
                     )
+                    @Suppress("DEPRECATION")
+                    val trendingUpIcon = Icons.Default.TrendingUp
                     StatCard(
                         title = "Erledigungsrate",
                         value = "${(state.completionRate * 100).toInt()}%",
-                        icon = Icons.Default.TrendingUp,
+                        icon = trendingUpIcon,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f)
                     )
@@ -174,6 +176,22 @@ fun ProfileScreen(
             }
 
             item {
+                OutlinedButton(
+                    onClick = { viewModel.exportBackup() },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    enabled = !viewModel.isExporting.collectAsState().value
+                ) {
+                    if (viewModel.isExporting.collectAsState().value) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(Icons.Default.Share, contentDescription = null)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Backup exportieren")
+                }
+            }
+
+            item {
                 Button(
                     onClick = { navController.navigate(Screen.Skills.route) },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -208,7 +226,9 @@ fun ProfileScreen(
                     onClick = { navController.navigate(Screen.ErrorHistory.route) },
                     modifier = Modifier.fillMaxWidth().height(48.dp)
                 ) {
-                    Icon(Icons.Default.List, contentDescription = null)
+                    @Suppress("DEPRECATION")
+                    val listIcon = Icons.Default.List
+                    Icon(listIcon, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Alle Fehler anzeigen")
                 }

@@ -154,7 +154,7 @@ fun NewTaskScreen(
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showCategoryPicker) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor()
+                        .menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true)
                 )
                 ExposedDropdownMenu(
                     expanded = state.showCategoryPicker,

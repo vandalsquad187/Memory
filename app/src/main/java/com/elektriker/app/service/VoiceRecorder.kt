@@ -31,6 +31,7 @@ class VoiceRecorder @Inject constructor(
         recorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             MediaRecorder(context)
         } else {
+            @Suppress("DEPRECATION")
             MediaRecorder()
         }.apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)

@@ -52,12 +52,14 @@ fun TaskDetailScreen(
                     Text(if (isEditing) "Bearbeiten" else (task?.title ?: "Laden..."))
                 },
                 navigationIcon = {
+                    @Suppress("DEPRECATION")
+                    val backIcon = if (isEditing) Icons.Default.Close else Icons.Default.ArrowBack
                     IconButton(onClick = {
                         if (isEditing) viewModel.cancelEdit()
                         else navController.popBackStack()
                     }) {
                         Icon(
-                            if (isEditing) Icons.Default.Close else Icons.Default.ArrowBack,
+                            backIcon,
                             contentDescription = if (isEditing) "Abbrechen" else "Zurück"
                         )
                     }
@@ -326,7 +328,7 @@ private fun EditTaskContent(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = editState.showCategoryPicker) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor()
+                    .menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true)
             )
             ExposedDropdownMenu(
                 expanded = editState.showCategoryPicker,

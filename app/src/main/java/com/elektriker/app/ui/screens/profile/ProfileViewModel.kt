@@ -21,10 +21,13 @@ data class ProfileUiState(
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val taskRepository: TaskRepository,
-    private val errorLogRepository: ErrorLogRepository
+    private val errorLogRepository: ErrorLogRepository,
+    private val backupManager: com.elektriker.app.service.BackupManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ProfileUiState())
+    private val _isExporting = MutableStateFlow(false)
+    val isExporting: StateFlow<Boolean> = _isExporting.asStateFlow()
     val state: StateFlow<ProfileUiState> = _state.asStateFlow()
 
     init {
@@ -66,6 +69,18 @@ class ProfileViewModel @Inject constructor(
                     .mapValues { it.value.size }
                 _state.update { it.copy(tasksByCategory = byCategory) }
             }
+        }
+    }
+
+    fun exportBackup() {
+        if (_isExporting.value) return
+        viewModelScope.launch {
+            _isExporting.value = true
+            val file = backupManager.exportBackup()
+            if (file != null) {
+                backupManager.shareBackup(file)
+            }
+            _isExporting.value = false
         }
     }
 }
