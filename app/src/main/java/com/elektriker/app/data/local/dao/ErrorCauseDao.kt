@@ -23,4 +23,7 @@ interface ErrorCauseDao {
 
     @Query("SELECT * FROM error_causes WHERE id = :id")
     suspend fun getCauseById(id: String): ErrorCauseEntity?
+
+    @Query("SELECT * FROM error_causes")
+    suspend fun getAllCausesOnce(): List<ErrorCauseEntity>
 }

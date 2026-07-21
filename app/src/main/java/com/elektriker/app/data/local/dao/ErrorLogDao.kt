@@ -41,6 +41,15 @@ interface ErrorLogDao {
 
     @Query("SELECT * FROM error_logs WHERE id = :id")
     suspend fun getErrorById(id: String): ErrorLogEntity?
+
+    @Query("SELECT * FROM error_logs WHERE solution != '' ORDER BY date DESC")
+    fun getErrorsWithSolutions(): Flow<List<ErrorLogEntity>>
+
+    @Query("SELECT * FROM error_logs")
+    suspend fun getAllErrorsOnce(): List<ErrorLogEntity>
+
+    @Query("SELECT COUNT(*) FROM error_logs WHERE taskCategory = :category")
+    suspend fun getErrorCountByCategory(category: String): Int
 }
 
 data class ErrorCategoryStats(

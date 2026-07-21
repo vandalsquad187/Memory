@@ -199,6 +199,17 @@ fun ProfileScreen(
                 }
             }
 
+            item {
+                OutlinedButton(
+                    onClick = { navController.navigate(Screen.Insights.route) },
+                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                ) {
+                    Icon(Icons.Default.Insights, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Muster & Erkenntnisse")
+                }
+            }
+
             item { Spacer(modifier = Modifier.height(80.dp)) }
         }
     }
