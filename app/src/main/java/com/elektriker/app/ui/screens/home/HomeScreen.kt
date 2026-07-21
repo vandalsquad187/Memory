@@ -1,5 +1,7 @@
 package com.elektriker.app.ui.screens.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -105,17 +107,40 @@ fun HomeScreen(
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "${state.totalTasks}",
-                                style = MaterialTheme.typography.displayMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                text = "Heute",
+                                style = MaterialTheme.typography.titleSmall
                             )
                             Text(
-                                text = "Arbeiten gesamt",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                text = "${state.totalTasks}",
+                                style = MaterialTheme.typography.headlineLarge
                             )
                         }
                     }
+                    Card(
+                        modifier = Modifier.weight(1f),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Aktuell",
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                            Text(
+                                text = "${state.totalTasks - state.completedTasks}",
+                                style = MaterialTheme.typography.headlineLarge
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     Card(
                         modifier = Modifier.weight(1f),
                         colors = CardDefaults.cardColors(
@@ -124,16 +149,75 @@ fun HomeScreen(
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "${state.completedTasks}",
-                                style = MaterialTheme.typography.displayMedium,
-                                color = GreenSuccess
+                                text = "Erledigt",
+                                style = MaterialTheme.typography.titleSmall
                             )
                             Text(
-                                text = "erledigt",
-                                style = MaterialTheme.typography.bodyMedium,
+                                text = "${state.completedTasks}",
+                                style = MaterialTheme.typography.headlineLarge,
                                 color = GreenSuccess
                             )
                         }
+                    }
+                    Card(
+                        modifier = Modifier.weight(1f),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Fehler",
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                            Text(
+                                text = "${state.totalTasks}",
+                                style = MaterialTheme.typography.headlineLarge,
+                                color = MaterialTheme.colorScheme.tertiary
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                Card(
+                    onClick = { navController.navigate(Screen.Projects.route) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Business,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Baustellen",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Text(
+                                text = "Projekte mit allen Arbeiten und Fehlern",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
                     }
                 }
             }

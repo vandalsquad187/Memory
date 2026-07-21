@@ -2,6 +2,7 @@ package com.elektriker.app.service
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.core.content.FileProvider
 import com.elektriker.app.data.local.dao.*
 import com.elektriker.app.data.local.entity.*
@@ -9,7 +10,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.BufferedReader
 import java.io.File
+import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
@@ -53,6 +56,174 @@ class BackupManager @Inject constructor(
         return file
     }
 
+    suspend fun importBackup(uri: Uri): Boolean {
+        return try {
+            val reader = BufferedReader(
+                InputStreamReader(context.contentResolver.openInputStream(uri) ?: return false)
+            )
+            val json = JSONObject(reader.readText())
+            reader.close()
+
+            clearAll()
+
+            parseAndInsert(json.optJSONArray("tasks")) { insertTask(it) }
+            parseAndInsert(json.optJSONArray("steps")) { insertStep(it) }
+            parseAndInsert(json.optJSONArray("errors")) { insertErrorLog(it) }
+            parseAndInsert(json.optJSONArray("errorCauses")) { insertErrorCause(it) }
+            parseAndInsert(json.optJSONArray("knowledge")) { insertKnowledge(it) }
+            parseAndInsert(json.optJSONArray("projects")) { insertProject(it) }
+            parseAndInsert(json.optJSONArray("skills")) { insertSkill(it) }
+            parseAndInsert(json.optJSONArray("achievements")) { insertAchievement(it) }
+            parseAndInsert(json.optJSONArray("templates")) { insertTemplate(it) }
+
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    private suspend fun parseAndInsert(arr: JSONArray?, insert: suspend (JSONObject) -> Unit) {
+        if (arr == null) return
+        for (i in 0 until arr.length()) {
+            insert(arr.getJSONObject(i))
+        }
+    }
+
+    private suspend fun clearAll() {
+        workTaskDao.deleteAll()
+        workStepDao.deleteAll()
+        errorLogDao.deleteAll()
+        errorCauseDao.deleteAll()
+        knowledgeBaseDao.deleteAll()
+        projectDao.deleteAll()
+        skillDao.deleteAll()
+        achievementDao.deleteAll()
+        workflowTemplateDao.deleteAll()
+    }
+
+    private suspend fun insertTask(obj: JSONObject) {
+        workTaskDao.insertTask(WorkTaskEntity(
+            id = obj.getString("id"),
+            title = obj.optString("title"),
+            category = obj.optString("category"),
+            description = obj.optString("description"),
+            location = obj.optString("location"),
+            customerName = obj.optString("customerName"),
+            date = obj.optLong("date"),
+            isCompleted = obj.optBoolean("isCompleted"),
+            projectId = obj.optString("projectId", null),
+            durationSeconds = obj.optInt("durationSeconds"),
+            notes = obj.optString("notes"),
+            voiceNotePath = obj.optString("voiceNotePath", null),
+            createdAt = obj.optLong("createdAt", obj.optLong("date")),
+            updatedAt = obj.optLong("updatedAt", obj.optLong("date")),
+            materials = obj.optString("materials"),
+            tools = obj.optString("tools"),
+            solution = obj.optString("solution"),
+            rating = obj.optInt("rating")
+        ))
+    }
+
+    private suspend fun insertStep(obj: JSONObject) {
+        workStepDao.insertStep(WorkStepEntity(
+            id = obj.getString("id"),
+            taskId = obj.getString("taskId"),
+            stepOrder = obj.optInt("stepOrder"),
+            description = obj.optString("description"),
+            isDone = obj.optBoolean("isDone"),
+            warning = obj.optString("warning", null),
+            imagePath = null,
+            durationSeconds = obj.optInt("durationSeconds")
+        ))
+    }
+
+    private suspend fun insertErrorLog(obj: JSONObject) {
+        errorLogDao.insertError(ErrorLogEntity(
+            id = obj.getString("id"),
+            taskCategory = obj.optString("taskCategory"),
+            description = obj.optString("description"),
+            severity = obj.optInt("severity"),
+            date = obj.optLong("date"),
+            taskId = obj.optString("taskId", null),
+            wasAvoided = obj.optBoolean("wasAvoided"),
+            causes = obj.optString("causes"),
+            causeIds = obj.optString("causeIds"),
+            solution = obj.optString("solution")
+        ))
+    }
+
+    private suspend fun insertErrorCause(obj: JSONObject) {
+        errorCauseDao.insertCause(ErrorCauseEntity(
+            id = obj.getString("id"),
+            label = obj.optString("label"),
+            description = obj.optString("description"),
+            category = obj.optString("category")
+        ))
+    }
+
+    private suspend fun insertKnowledge(obj: JSONObject) {
+        knowledgeBaseDao.insertEntry(KnowledgeBaseEntity(
+            id = obj.getString("id"),
+            title = obj.optString("title"),
+            content = obj.optString("content"),
+            tags = obj.optString("tags"),
+            category = obj.optString("category"),
+            isFavorite = obj.optBoolean("isFavorite"),
+            sourceTaskId = null,
+            createdAt = obj.optLong("createdAt"),
+            updatedAt = obj.optLong("updatedAt")
+        ))
+    }
+
+    private suspend fun insertProject(obj: JSONObject) {
+        projectDao.insertProject(ProjectEntity(
+            id = obj.getString("id"),
+            name = obj.optString("name"),
+            address = obj.optString("address"),
+            contactName = obj.optString("contactName"),
+            contactPhone = obj.optString("contactPhone"),
+            createdAt = obj.optLong("createdAt")
+        ))
+    }
+
+    private suspend fun insertSkill(obj: JSONObject) {
+        skillDao.insertSkill(SkillEntity(
+            id = obj.getString("id"),
+            name = obj.optString("name"),
+            category = obj.optString("category"),
+            description = obj.optString("description"),
+            currentXp = obj.optInt("currentXp"),
+            level = obj.optInt("level"),
+            maxLevel = obj.optInt("maxLevel"),
+            nextLevelXp = obj.optInt("nextLevelXp")
+        ))
+    }
+
+    private suspend fun insertAchievement(obj: JSONObject) {
+        achievementDao.insertAll(listOf(AchievementEntity(
+            id = obj.getString("id"),
+            name = obj.optString("name"),
+            description = obj.optString("description"),
+            tier = obj.optInt("tier"),
+            isUnlocked = obj.optBoolean("isUnlocked"),
+            unlockedAt = if (obj.isNull("unlockedAt")) null else obj.optLong("unlockedAt"),
+            isBuiltIn = true
+        )))
+    }
+
+    private suspend fun insertTemplate(obj: JSONObject) {
+        workflowTemplateDao.insertTemplate(WorkflowTemplateEntity(
+            id = obj.getString("id"),
+            name = obj.optString("name"),
+            category = obj.optString("category"),
+            stepsJson = obj.optString("stepsJson"),
+            isBuiltIn = obj.optBoolean("isBuiltIn"),
+            usageCount = obj.optInt("usageCount"),
+            createdAt = obj.optLong("createdAt")
+        ))
+    }
+
     fun shareBackup(file: File) {
         val uri = FileProvider.getUriForFile(
             context,
@@ -86,6 +257,10 @@ class BackupManager @Inject constructor(
         put("isCompleted", isCompleted)
         put("projectId", projectId ?: JSONObject.NULL)
         put("durationSeconds", durationSeconds)
+        put("notes", notes)
+        put("voiceNotePath", voiceNotePath ?: JSONObject.NULL)
+        put("createdAt", createdAt)
+        put("updatedAt", updatedAt)
         put("materials", materials)
         put("tools", tools)
         put("solution", solution)

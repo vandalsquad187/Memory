@@ -46,4 +46,7 @@ interface KnowledgeBaseDao {
 
     @Query("DELETE FROM knowledge_base WHERE id = :id")
     suspend fun deleteEntryById(id: String)
+
+    @Query("DELETE FROM knowledge_base")
+    suspend fun deleteAll()
 }

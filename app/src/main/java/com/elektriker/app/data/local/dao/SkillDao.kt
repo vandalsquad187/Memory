@@ -29,4 +29,7 @@ interface SkillDao {
 
     @Update
     suspend fun updateSkill(skill: SkillEntity)
+
+    @Query("DELETE FROM skills")
+    suspend fun deleteAll()
 }

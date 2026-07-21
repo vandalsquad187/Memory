@@ -26,4 +26,7 @@ interface ProjectDao {
 
     @Query("SELECT COUNT(*) FROM projects")
     suspend fun getProjectCount(): Int
+
+    @Query("DELETE FROM projects")
+    suspend fun deleteAll()
 }

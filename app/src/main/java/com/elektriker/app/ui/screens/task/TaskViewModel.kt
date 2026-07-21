@@ -44,7 +44,8 @@ class TaskViewModel @Inject constructor(
     private val voiceRecorder: VoiceRecorder,
     private val errorCauseRepository: ErrorCauseRepository,
     private val skillRepository: SkillRepository,
-    private val gamificationManager: com.elektriker.app.service.GamificationManager
+    private val gamificationManager: com.elektriker.app.service.GamificationManager,
+    private val pdfExportManager: com.elektriker.app.service.PdfExportManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(NewTaskUiState())
@@ -272,6 +273,17 @@ class TaskViewModel @Inject constructor(
         }
     }
 
+    fun exportPdf() {
+        val t = _task.value ?: return
+        viewModelScope.launch {
+            val steps = stepRepository.getStepsForTaskOnce(t.id)
+            val file = pdfExportManager.exportTaskPdf(t, steps)
+            if (file != null) {
+                pdfExportManager.sharePdf(file)
+            }
+        }
+    }
+
     fun saveRating(rating: Int) {
         viewModelScope.launch {
             val t = _task.value ?: return@launch
@@ -283,7 +295,7 @@ class TaskViewModel @Inject constructor(
         }
     }
 
-        private val _editErrorDialog = MutableStateFlow(EditErrorState())
+    private val _editErrorDialog = MutableStateFlow(EditErrorState())
     val editErrorDialog: StateFlow<EditErrorState> = _editErrorDialog.asStateFlow()
 
     fun showEditErrorDialog() {

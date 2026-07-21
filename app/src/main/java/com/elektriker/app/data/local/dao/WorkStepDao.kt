@@ -41,4 +41,7 @@ interface WorkStepDao {
 
     @Query("SELECT COUNT(*) FROM work_steps WHERE taskId = :taskId")
     suspend fun getTotalStepCount(taskId: String): Int
+
+    @Query("DELETE FROM work_steps")
+    suspend fun deleteAll()
 }

@@ -26,4 +26,7 @@ interface ErrorCauseDao {
 
     @Query("SELECT * FROM error_causes")
     suspend fun getAllCausesOnce(): List<ErrorCauseEntity>
+
+    @Query("DELETE FROM error_causes")
+    suspend fun deleteAll()
 }

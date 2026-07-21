@@ -32,4 +32,7 @@ interface WorkflowTemplateDao {
 
     @Query("DELETE FROM workflow_templates WHERE id = :id")
     suspend fun deleteTemplateById(id: String)
+
+    @Query("DELETE FROM workflow_templates")
+    suspend fun deleteAll()
 }

@@ -1,5 +1,6 @@
 package com.elektriker.app.ui.screens.profile
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elektriker.app.data.local.entity.WorkTaskEntity
@@ -28,6 +29,10 @@ class ProfileViewModel @Inject constructor(
     private val _state = MutableStateFlow(ProfileUiState())
     private val _isExporting = MutableStateFlow(false)
     val isExporting: StateFlow<Boolean> = _isExporting.asStateFlow()
+    private val _isImporting = MutableStateFlow(false)
+    val isImporting: StateFlow<Boolean> = _isImporting.asStateFlow()
+    private val _importResult = MutableSharedFlow<String>()
+    val importResult: SharedFlow<String> = _importResult.asSharedFlow()
     val state: StateFlow<ProfileUiState> = _state.asStateFlow()
 
     init {
@@ -81,6 +86,16 @@ class ProfileViewModel @Inject constructor(
                 backupManager.shareBackup(file)
             }
             _isExporting.value = false
+        }
+    }
+
+    fun importBackup(uri: Uri) {
+        if (_isImporting.value) return
+        viewModelScope.launch {
+            _isImporting.value = true
+            val success = backupManager.importBackup(uri)
+            _importResult.emit(if (success) "Backup erfolgreich importiert!" else "Import fehlgeschlagen")
+            _isImporting.value = false
         }
     }
 }

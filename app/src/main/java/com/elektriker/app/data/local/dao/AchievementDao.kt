@@ -29,4 +29,7 @@ interface AchievementDao {
 
     @Query("UPDATE achievements SET isUnlocked = 0, unlockedAt = NULL WHERE id = :id")
     suspend fun lock(id: String)
+
+    @Query("DELETE FROM achievements")
+    suspend fun deleteAll()
 }

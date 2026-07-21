@@ -56,4 +56,7 @@ interface WorkTaskDao {
 
     @Query("SELECT date FROM work_tasks ORDER BY date DESC")
     suspend fun getAllTaskDates(): List<Long>
+
+    @Query("DELETE FROM work_tasks")
+    suspend fun deleteAll()
 }

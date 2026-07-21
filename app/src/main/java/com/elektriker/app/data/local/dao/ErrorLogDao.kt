@@ -56,6 +56,9 @@ interface ErrorLogDao {
 
     @Query("SELECT COUNT(*) FROM error_logs WHERE solution != ''")
     suspend fun getErrorsWithSolutionCount(): Int
+
+    @Query("DELETE FROM error_logs")
+    suspend fun deleteAll()
 }
 
 data class ErrorCategoryStats(

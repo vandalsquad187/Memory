@@ -133,6 +133,7 @@ fun TaskDetailScreen(
                 onNavigateAssistant = {
                     navController.navigate(Screen.Assistant.createRoute(taskId))
                 },
+                onExportPdf = { viewModel.exportPdf() },
                 onRatingChange = { rating ->
                     viewModel.saveRating(rating)
                 },
@@ -168,6 +169,7 @@ private fun ReadOnlyTaskContent(
     taskId: String,
     onToggleStep: (String, Boolean) -> Unit,
     onNavigateAssistant: () -> Unit,
+    onExportPdf: () -> Unit,
     onRatingChange: ((Int) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -243,22 +245,48 @@ private fun ReadOnlyTaskContent(
                 }
             }
 
-            if (steps.isNotEmpty()) {
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Schritte",
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                        FilledTonalButton(onClick = onNavigateAssistant) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = null)
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Schritte",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilledTonalButton(onClick = onExportPdf) {
+                            Icon(Icons.Default.PictureAsPdf, contentDescription = null)
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Assistent")
+                            Text("PDF")
+                        }
+                        if (steps.isNotEmpty()) {
+                            FilledTonalButton(onClick = onNavigateAssistant) {
+                                Icon(Icons.Default.PlayArrow, contentDescription = null)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Assistent")
+                            }
                         }
                     }
+                }
+            }
+
+            if (steps.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Schritte",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                }
+
+                items(steps) { step ->
+                    StepChecklistItem(
+                        stepNumber = step.stepOrder + 1,
+                        description = step.description,
+                        isDone = step.isDone,
+                        warning = step.warning,
+                        onToggle = { onToggleStep(step.id, !step.isDone) }
+                    )
                 }
 
                 items(steps) { step ->
