@@ -22,10 +22,10 @@ fun BottomNavBar(
             label = { Text("Home") }
         )
         NavigationBarItem(
-            selected = currentRoute == "history",
-            onClick = { onNavigate("history") },
-            icon = { Icon(Icons.Default.History, contentDescription = "Verlauf") },
-            label = { Text("Verlauf") }
+            selected = currentRoute == "projects",
+            onClick = { onNavigate("projects") },
+            icon = { Icon(Icons.Default.Business, contentDescription = "Baustellen") },
+            label = { Text("Baustellen") }
         )
         NavigationBarItem(
             selected = currentRoute == "new_task",

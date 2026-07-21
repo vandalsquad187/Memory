@@ -40,11 +40,11 @@ fun HistoryScreen(
         },
         bottomBar = {
             BottomNavBar(
-                currentRoute = "history",
+                currentRoute = "projects",
                 onNavigate = { route ->
                     when (route) {
                         "home" -> navController.navigate(Screen.Home.route) { popUpTo(Screen.Home.route) { inclusive = true } }
-                        "history" -> {}
+                        "projects" -> navController.navigate(Screen.Projects.route) { popUpTo(Screen.Projects.route) { inclusive = true } }
                         "new_task" -> navController.navigate(Screen.NewTask.route)
                         "knowledge" -> navController.navigate(Screen.Knowledge.route)
                         "profile" -> navController.navigate(Screen.Profile.route)

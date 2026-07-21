@@ -53,7 +53,7 @@ fun KnowledgeScreen(
                 onNavigate = { route ->
                     when (route) {
                         "home" -> navController.navigate(Screen.Home.route) { popUpTo(Screen.Home.route) { inclusive = true } }
-                        "history" -> navController.navigate(Screen.History.route)
+                        "projects" -> navController.navigate(Screen.Projects.route)
                         "new_task" -> navController.navigate(Screen.NewTask.route)
                         "knowledge" -> {}
                         "profile" -> navController.navigate(Screen.Profile.route)

@@ -59,7 +59,7 @@ fun HomeScreen(
                 onNavigate = { route ->
                     when (route) {
                         "home" -> {}
-                        "history" -> navController.navigate(Screen.History.route)
+                        "projects" -> navController.navigate(Screen.Projects.route)
                         "new_task" -> navController.navigate(Screen.NewTask.route)
                         "knowledge" -> navController.navigate(Screen.Knowledge.route)
                         "profile" -> navController.navigate(Screen.Profile.route)
