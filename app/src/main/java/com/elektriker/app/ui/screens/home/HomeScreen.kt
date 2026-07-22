@@ -1,7 +1,5 @@
 package com.elektriker.app.ui.screens.home
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,7 +17,6 @@ import com.elektriker.app.data.local.entity.WorkTaskEntity
 import com.elektriker.app.ui.components.*
 import com.elektriker.app.ui.navigation.Screen
 import com.elektriker.app.ui.theme.GreenSuccess
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,13 +25,6 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-
-    LaunchedEffect(state.isTimerRunning) {
-        while (state.isTimerRunning) {
-            delay(1000)
-            viewModel.tickTimer()
-        }
-    }
 
     var showNewTaskDialog by remember { mutableStateOf(false) }
     var showTemplatePicker by remember { mutableStateOf(false) }
@@ -86,14 +76,6 @@ fun HomeScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item { TimerWidget(
-                elapsedSeconds = state.timerElapsedSeconds,
-                isRunning = state.isTimerRunning,
-                onStart = { viewModel.startTimer() },
-                onPause = { viewModel.pauseTimer() },
-                onReset = { viewModel.resetTimer() }
-            ) }
-
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -176,48 +158,6 @@ fun HomeScreen(
                                 color = MaterialTheme.colorScheme.tertiary
                             )
                         }
-                    }
-                }
-            }
-
-            item {
-                Card(
-                    onClick = { navController.navigate(Screen.Projects.route) },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.Business,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "Baustellen",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                            Text(
-                                text = "Projekte mit allen Arbeiten und Fehlern",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-                            )
-                        }
-                        Spacer(modifier = Modifier.weight(1f))
-                        Icon(
-                            Icons.Default.ChevronRight,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
                     }
                 }
             }

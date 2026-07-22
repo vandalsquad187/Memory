@@ -2,12 +2,14 @@ package com.elektriker.app.ui.screens.task
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.elektriker.app.data.local.entity.KnowledgeBaseEntity
 import com.elektriker.app.data.local.entity.WorkTaskEntity
 import com.elektriker.app.data.local.entity.WorkStepEntity
 import com.elektriker.app.data.repository.*
 import com.elektriker.app.service.VoiceRecorder
 import com.elektriker.app.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -26,7 +28,10 @@ data class NewTaskUiState(
     val isRecording: Boolean = false,
     val isPlaying: Boolean = false,
     val photoPaths: List<String> = emptyList(),
-    val showCategoryPicker: Boolean = false
+    val showCategoryPicker: Boolean = false,
+    val timerElapsedSeconds: Int = 0,
+    val isTimerRunning: Boolean = false,
+    val suggestedKnowledge: List<KnowledgeBaseEntity> = emptyList()
 )
 
 data class StepInput(
@@ -44,6 +49,7 @@ class TaskViewModel @Inject constructor(
     private val voiceRecorder: VoiceRecorder,
     private val errorCauseRepository: ErrorCauseRepository,
     private val skillRepository: SkillRepository,
+    private val knowledgeRepository: KnowledgeRepository,
     private val gamificationManager: com.elektriker.app.service.GamificationManager,
     private val pdfExportManager: com.elektriker.app.service.PdfExportManager
 ) : ViewModel() {
@@ -126,6 +132,22 @@ class TaskViewModel @Inject constructor(
         _state.update { it.copy(photoPaths = it.photoPaths + path) }
     }
 
+    fun startTimer() {
+        _state.update { it.copy(isTimerRunning = true) }
+    }
+
+    fun pauseTimer() {
+        _state.update { it.copy(isTimerRunning = false) }
+    }
+
+    fun resetTimer() {
+        _state.update { it.copy(isTimerRunning = false, timerElapsedSeconds = 0) }
+    }
+
+    fun tickTimer() {
+        _state.update { it.copy(timerElapsedSeconds = it.timerElapsedSeconds + 1) }
+    }
+
     fun saveTask(projectId: String? = null) {
         viewModelScope.launch {
             val s = _state.value
@@ -140,7 +162,7 @@ class TaskViewModel @Inject constructor(
                 location = s.location,
                 customerName = s.customerName,
                 projectId = projectId,
-                durationSeconds = 0
+                durationSeconds = _state.value.timerElapsedSeconds
             )
 
             s.steps.forEachIndexed { index, stepInput ->
@@ -159,8 +181,12 @@ class TaskViewModel @Inject constructor(
             gamificationManager.checkOnTaskCreated(s.category)
             gamificationManager.checkOnStreak()
 
+            val keywords = s.title.split(" ") + s.description.split(" ") + s.category.split(" ")
+            val knowledge = knowledgeRepository.findRelevantKnowledge(s.category, keywords)
+            _state.update { it.copy(suggestedKnowledge = knowledge) }
+
             _state.update {
-                it.copy(isSaving = false, savedTaskId = task.id)
+                it.copy(isSaving = false, savedTaskId = task.id, isTimerRunning = false)
             }
         }
     }

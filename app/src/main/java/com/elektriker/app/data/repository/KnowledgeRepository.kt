@@ -25,6 +25,24 @@ class KnowledgeRepository @Inject constructor(
 
     suspend fun getEntryById(id: String): KnowledgeBaseEntity? = knowledgeBaseDao.getEntryById(id)
 
+    suspend fun getEntriesByCategoryOnce(category: String): List<KnowledgeBaseEntity> =
+        knowledgeBaseDao.getEntriesByCategoryOnce(category)
+
+    suspend fun searchEntriesOnce(query: String): List<KnowledgeBaseEntity> =
+        knowledgeBaseDao.searchEntriesOnce(query)
+
+    suspend fun findRelevantKnowledge(category: String, keywords: List<String>): List<KnowledgeBaseEntity> {
+        val results = mutableSetOf<KnowledgeBaseEntity>()
+        val catEntries = knowledgeBaseDao.getEntriesByCategoryOnce(category)
+        results.addAll(catEntries)
+        keywords.forEach { kw ->
+            if (kw.length > 2) {
+                results.addAll(knowledgeBaseDao.searchEntriesOnce(kw))
+            }
+        }
+        return results.take(5)
+    }
+
     suspend fun createEntry(
         title: String,
         content: String,

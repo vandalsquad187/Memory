@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import kotlinx.coroutines.delay
 import com.elektriker.app.ui.components.WarningCard
 import com.elektriker.app.ui.navigation.Screen
 import com.elektriker.app.ui.theme.ErrorSeverityHigh
@@ -38,9 +39,22 @@ fun NewTaskScreen(
 
     LaunchedEffect(state.savedTaskId) {
         state.savedTaskId?.let { taskId ->
+            val count = state.suggestedKnowledge.size
+            if (count > 0) {
+                Toast.makeText(context,
+                    "$count passende Wissenseinträge gefunden – siehe Wissensdatenbank",
+                    Toast.LENGTH_LONG).show()
+            }
             navController.navigate(Screen.Assistant.createRoute(taskId)) {
                 popUpTo(Screen.Home.route)
             }
+        }
+    }
+
+    LaunchedEffect(state.isTimerRunning) {
+        while (state.isTimerRunning) {
+            delay(1000)
+            viewModel.tickTimer()
         }
     }
 
@@ -259,6 +273,14 @@ fun NewTaskScreen(
                 }
             }
 
+            TimerSection(
+                elapsedSeconds = state.timerElapsedSeconds,
+                isRunning = state.isTimerRunning,
+                onStart = { viewModel.startTimer() },
+                onPause = { viewModel.pauseTimer() },
+                onReset = { viewModel.resetTimer() }
+            )
+
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(
@@ -371,6 +393,64 @@ private fun StepInputCard(
                         cursorColor = ErrorSeverityMedium
                     )
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimerSection(
+    elapsedSeconds: Int,
+    isRunning: Boolean,
+    onStart: () -> Unit,
+    onPause: () -> Unit,
+    onReset: () -> Unit
+) {
+    val minutes = elapsedSeconds / 60
+    val seconds = elapsedSeconds % 60
+    val timeString = String.format("%02d:%02d", minutes, seconds)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = timeString,
+                style = MaterialTheme.typography.displayMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (!isRunning) {
+                    FilledTonalButton(onClick = onStart) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Start")
+                    }
+                } else {
+                    FilledTonalButton(onClick = onPause) {
+                        Icon(Icons.Default.Pause, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Pause")
+                    }
+                }
+                if (elapsedSeconds > 0) {
+                    OutlinedButton(onClick = onReset) {
+                        Icon(Icons.Default.Stop, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Stop")
+                    }
+                }
             }
         }
     }

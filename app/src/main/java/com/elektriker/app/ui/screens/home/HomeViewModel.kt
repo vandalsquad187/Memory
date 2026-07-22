@@ -12,9 +12,7 @@ import javax.inject.Inject
 data class HomeUiState(
     val recentTasks: List<WorkTaskEntity> = emptyList(),
     val totalTasks: Int = 0,
-    val completedTasks: Int = 0,
-    val isTimerRunning: Boolean = false,
-    val timerElapsedSeconds: Int = 0
+    val completedTasks: Int = 0
 )
 
 @HiltViewModel
@@ -41,21 +39,5 @@ class HomeViewModel @Inject constructor(
                 _state.update { it.copy(completedTasks = count) }
             }
         }
-    }
-
-    fun startTimer() {
-        _state.update { it.copy(isTimerRunning = true) }
-    }
-
-    fun pauseTimer() {
-        _state.update { it.copy(isTimerRunning = false) }
-    }
-
-    fun tickTimer() {
-        _state.update { it.copy(timerElapsedSeconds = it.timerElapsedSeconds + 1) }
-    }
-
-    fun resetTimer() {
-        _state.update { it.copy(isTimerRunning = false, timerElapsedSeconds = 0) }
     }
 }

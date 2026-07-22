@@ -12,6 +12,9 @@ interface KnowledgeBaseDao {
     @Query("SELECT * FROM knowledge_base WHERE category = :category ORDER BY title ASC")
     fun getEntriesByCategory(category: String): Flow<List<KnowledgeBaseEntity>>
 
+    @Query("SELECT * FROM knowledge_base WHERE category = :category ORDER BY title ASC")
+    suspend fun getEntriesByCategoryOnce(category: String): List<KnowledgeBaseEntity>
+
     @Query("SELECT * FROM knowledge_base WHERE id = :id")
     suspend fun getEntryById(id: String): KnowledgeBaseEntity?
 
@@ -25,6 +28,17 @@ interface KnowledgeBaseDao {
         """
     )
     fun searchEntries(query: String): Flow<List<KnowledgeBaseEntity>>
+
+    @Query(
+        """
+        SELECT * FROM knowledge_base 
+        WHERE title LIKE '%' || :query || '%' 
+        OR content LIKE '%' || :query || '%' 
+        OR tags LIKE '%' || :query || '%'
+        ORDER BY updatedAt DESC
+        """
+    )
+    suspend fun searchEntriesOnce(query: String): List<KnowledgeBaseEntity>
 
     @Query("SELECT * FROM knowledge_base WHERE isFavorite = 1 ORDER BY updatedAt DESC")
     fun getFavoriteEntries(): Flow<List<KnowledgeBaseEntity>>
