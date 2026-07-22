@@ -16,13 +16,17 @@ data class ProfileUiState(
     val completionRate: Float = 0f,
     val errorCount: Int = 0,
     val recentErrors: List<String> = emptyList(),
-    val tasksByCategory: Map<String, Int> = emptyMap()
+    val tasksByCategory: Map<String, Int> = emptyMap(),
+    val skillProgress: List<SkillProgress> = emptyList(),
+    val totalXp: Int = 0,
+    val overallProgress: Float = 0f
 )
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val taskRepository: TaskRepository,
     private val errorLogRepository: ErrorLogRepository,
+    private val skillRepository: SkillRepository,
     private val backupManager: com.elektriker.app.service.BackupManager
 ) : ViewModel() {
 
@@ -73,6 +77,29 @@ class ProfileViewModel @Inject constructor(
                 val byCategory = tasks.groupBy { it.category }
                     .mapValues { it.value.size }
                 _state.update { it.copy(tasksByCategory = byCategory) }
+            }
+        }
+        viewModelScope.launch {
+            skillRepository.getAllSkills().collect { skills ->
+                val progress = skills.map { s ->
+                    val percent = if (s.nextLevelXp > 0)
+                        (s.currentXp.toFloat() / s.nextLevelXp * 100).coerceAtMost(100f)
+                    else 100f
+                    SkillProgress(
+                        name = s.name,
+                        currentXp = s.currentXp,
+                        nextLevelXp = s.nextLevelXp,
+                        level = s.level,
+                        maxLevel = s.maxLevel,
+                        progressPercent = percent
+                    )
+                }
+                val totalXp = skills.sumOf { it.currentXp }
+                val maxPossible = skills.sumOf { if (it.nextLevelXp > 0) it.nextLevelXp else it.currentXp }
+                val overall = if (maxPossible > 0) (totalXp.toFloat() / maxPossible * 100).coerceAtMost(100f) else 0f
+                _state.update {
+                    it.copy(skillProgress = progress, totalXp = totalXp, overallProgress = overall)
+                }
             }
         }
     }

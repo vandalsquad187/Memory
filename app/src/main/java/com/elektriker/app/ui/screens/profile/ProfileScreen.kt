@@ -105,122 +105,13 @@ fun ProfileScreen(
             }
 
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    StatCard(
-                        title = "Arbeiten",
-                        value = "${state.totalTasks}",
-                        icon = Icons.Default.Work,
-                        color = BlueInfo,
-                        modifier = Modifier.weight(1f)
-                    )
-                    StatCard(
-                        title = "Fehler",
-                        value = "${state.errorCount}",
-                        icon = Icons.Default.BugReport,
-                        color = if (state.errorCount > 0) ErrorSeverityHigh else GreenSuccess,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            item {
-                Text(
-                    text = "Arbeiten nach Kategorie",
-                    style = MaterialTheme.typography.titleLarge
-                )
-            }
-
-            if (state.tasksByCategory.isEmpty()) {
-                item {
-                    Text(
-                        text = "Noch keine Daten vorhanden",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else {
-                items(state.tasksByCategory.toList()) { (category, count) ->
-                    CategoryBar(category = category, count = count, maxCount = state.tasksByCategory.values.maxOrNull() ?: 1)
-                }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "Letzte Fehler",
-                    style = MaterialTheme.typography.titleLarge
-                )
-            }
-
-            if (state.recentErrors.isEmpty()) {
-                item {
-                    Text(
-                        text = "Keine Fehler dokumentiert",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else {
-                items(state.recentErrors) { error ->
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = ErrorSeverityHigh.copy(alpha = 0.1f)
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = ErrorSeverityHigh,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = error,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    }
-                }
-            }
-
-            item {
                 OutlinedButton(
-                    onClick = { importLauncher.launch(arrayOf("application/json")) },
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    enabled = !viewModel.isImporting.collectAsState().value
+                    onClick = { navController.navigate(Screen.Checklists.route) },
+                    modifier = Modifier.fillMaxWidth().height(48.dp)
                 ) {
-                    if (viewModel.isImporting.collectAsState().value) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    } else {
-                        Icon(Icons.Default.FileOpen, contentDescription = null)
-                    }
+                    Icon(Icons.Default.Checklist, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Backup importieren")
-                }
-            }
-
-            item {
-                OutlinedButton(
-                    onClick = { viewModel.exportBackup() },
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    enabled = !viewModel.isExporting.collectAsState().value
-                ) {
-                    if (viewModel.isExporting.collectAsState().value) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    } else {
-                        Icon(Icons.Default.Share, contentDescription = null)
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Backup exportieren")
+                    Text("Checklisten")
                 }
             }
 
@@ -236,6 +127,54 @@ fun ProfileScreen(
                     Icon(Icons.Default.AutoAwesome, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Skills & Erfahrung")
+                }
+            }
+
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Fortschritt", style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                "${state.totalXp} XP · ${state.overallProgress.toInt()}%",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = { state.overallProgress / 100f },
+                            modifier = Modifier.fillMaxWidth().height(8.dp),
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        state.skillProgress.take(4).forEach { skill ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    skill.name,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Text(
+                                    "Lv.${skill.level} ${skill.progressPercent.toInt()}%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
                 }
             }
 

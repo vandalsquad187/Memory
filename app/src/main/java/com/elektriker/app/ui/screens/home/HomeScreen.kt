@@ -36,6 +36,9 @@ fun HomeScreen(
                     Text("Erfahrungsgedächtnis", style = MaterialTheme.typography.titleLarge)
                 },
                 actions = {
+                    IconButton(onClick = { navController.navigate(Screen.Search.route) }) {
+                        Icon(Icons.Default.Search, contentDescription = "Suche")
+                    }
                     IconButton(onClick = { navController.navigate(Screen.Profile.route) }) {
                         Icon(Icons.Default.Person, contentDescription = "Profil")
                     }

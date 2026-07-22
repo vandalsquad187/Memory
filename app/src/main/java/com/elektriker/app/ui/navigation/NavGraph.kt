@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.elektriker.app.ui.screens.assistant.AssistantScreen
 import com.elektriker.app.ui.screens.history.HistoryScreen
+import com.elektriker.app.ui.screens.checklist.ChecklistScreen
 import com.elektriker.app.ui.screens.home.HomeScreen
 import com.elektriker.app.ui.screens.knowledge.KnowledgeScreen
 import com.elektriker.app.ui.screens.achievements.AchievementsScreen
@@ -17,6 +18,7 @@ import com.elektriker.app.ui.screens.profile.ProfileScreen
 import com.elektriker.app.ui.screens.skills.SkillsScreen
 import com.elektriker.app.ui.screens.project.ProjectDetailScreen
 import com.elektriker.app.ui.screens.project.ProjectScreen
+import com.elektriker.app.ui.screens.search.SearchScreen
 import com.elektriker.app.ui.screens.task.NewTaskScreen
 import com.elektriker.app.ui.screens.task.TaskDetailScreen
 
@@ -104,6 +106,14 @@ fun AppNavGraph(
 
         composable(Screen.Achievements.route) {
             AchievementsScreen(navController = navController)
+        }
+
+        composable(Screen.Search.route) {
+            SearchScreen(navController = navController)
+        }
+
+        composable(Screen.Checklists.route) {
+            ChecklistScreen(navController = navController)
         }
     }
 }

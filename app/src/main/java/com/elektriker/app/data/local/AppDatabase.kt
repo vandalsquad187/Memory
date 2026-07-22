@@ -18,9 +18,11 @@ import com.elektriker.app.data.local.entity.*
         ProjectEntity::class,
         ErrorCauseEntity::class,
         SkillEntity::class,
-        AchievementEntity::class
+        AchievementEntity::class,
+        ChecklistEntity::class,
+        ChecklistItemEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -34,6 +36,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun errorCauseDao(): ErrorCauseDao
     abstract fun skillDao(): SkillDao
     abstract fun achievementDao(): AchievementDao
+    abstract fun checklistDao(): ChecklistDao
 
     companion object {
         val seederCallback = DatabaseSeeder()

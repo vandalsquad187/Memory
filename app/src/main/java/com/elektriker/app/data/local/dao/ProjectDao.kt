@@ -29,4 +29,7 @@ interface ProjectDao {
 
     @Query("DELETE FROM projects")
     suspend fun deleteAll()
+
+    @Query("SELECT * FROM projects WHERE name LIKE '%' || :query || '%' OR address LIKE '%' || :query || '%' OR contactName LIKE '%' || :query || '%' ORDER BY createdAt DESC")
+    suspend fun searchProjects(query: String): List<ProjectEntity>
 }

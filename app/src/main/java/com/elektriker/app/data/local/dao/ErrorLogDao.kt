@@ -45,6 +45,9 @@ interface ErrorLogDao {
     @Query("SELECT * FROM error_logs WHERE solution != '' ORDER BY date DESC")
     fun getErrorsWithSolutions(): Flow<List<ErrorLogEntity>>
 
+    @Query("SELECT * FROM error_logs WHERE description LIKE '%' || :query || '%' OR causes LIKE '%' || :query || '%' OR solution LIKE '%' || :query || '%' ORDER BY date DESC")
+    suspend fun searchErrors(query: String): List<ErrorLogEntity>
+
     @Query("SELECT * FROM error_logs")
     suspend fun getAllErrorsOnce(): List<ErrorLogEntity>
 
